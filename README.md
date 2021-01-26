@@ -5,9 +5,11 @@
 Starts up a new server and db instance. Make sure docker is downloaded.
 
 ### Client app: 
+- cd into client-app directory
 - docker-compose up
 
 ### Cloud app:
+- cd into client-app directory
 - docker-compose up
 
 ## Connecting to databae: 
