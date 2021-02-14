@@ -8,12 +8,12 @@ version: '3'
 # Docker compose is only for local environment running. Deploying into aws will be using the travis CICD pipeline which uses Dockerrun.aws.json
 services:
   node-server: 
-    build: "./client-server"
-    # image: "limcollintj/eopsi-cloud"
+    build: "./server"
+    # image: "limcollintj/eopsi-client"
     ports: 
-      - "5000:5000"
+      - "5001:5000"
     volumes:
-      - "./client-server:/app"
+      - "./server:/app"
     # The AWS t2 micro instance can allow up to 1 GB of ram. Be careful when increasing mem limit
     mem_limit: 500m
     depends_on: 
@@ -24,7 +24,7 @@ services:
     volumes: 
       - ./client-db/db_data:/var/lib/postgresql/data 
     ports:
-      - "5432:5432"
+      - "5433:5432"
     mem_limit: 300m
     env_file: 
       - ./env/db.env

@@ -1,7 +1,6 @@
 
 export const user = 'postgres'
-export const password = 'limtj123'
-export const database = 'rozzby'
-export const host = 'rozzby-db.ceblb2icynpa.ap-southeast-1.rds.amazonaws.com'
-// export const host = 'db-12'
+export const password = 'RCPEOPSI' // For Production we should keep it in an environment variable
+export const database = 'client'
+export const host = 'db'
 export const port = 5432

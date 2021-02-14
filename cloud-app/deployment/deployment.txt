@@ -1,0 +1,13 @@
+If we are to change to a new profile
+
+set a new profile in ~/.aws/config using
+[profile eb-eopsi]
+aws_access_key_id = <>
+aws_secret_access_key = <>
+
+run: eb init --profile eb-eopsi
+
+To deploy: (docker password required)
+build: (In the server directory) docker build -t limcollintj/rcp-eopsi
+push: docker push limcollintj/rcp-eopsi
+deploy: (In deployment folder) eb deploy
