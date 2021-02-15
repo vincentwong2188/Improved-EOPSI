@@ -1,0 +1,12 @@
+import Attribute from '../entities/attribute'
+import CloudConfig from '../entities/cloudConfig'
+import galois from '@guildofweavers/galois'
+
+/**
+ * Interface for the data access layer to communicate with the service layer
+ */
+export default interface IattributesRepo {
+    saveAttributesLocal : (attributes: Attribute[]) => void;
+    getCloudConfig : () => Promise<CloudConfig>
+    saveAttributesCloud : (attributes: galois.Matrix) => Promise<void>
+}
