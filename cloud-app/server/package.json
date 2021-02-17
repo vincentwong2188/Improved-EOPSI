@@ -15,6 +15,7 @@
   "author": "Collin Lim",
   "license": "ISC",
   "dependencies": {
+    "@guildofweavers/galois": "^0.4.22",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/uuid": "^8.3.0",
     "algoliasearch": "^4.8.3",
@@ -31,6 +32,7 @@
     "moment": "^2.29.1",
     "multer": "^1.4.2",
     "multer-s3": "^2.9.0",
+    "node-fetch": "^2.6.1",
     "nodemailer": "^6.4.17",
     "pg": "^8.5.1",
     "typedi": "^0.8.0",

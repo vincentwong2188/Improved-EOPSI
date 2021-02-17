@@ -8,8 +8,8 @@ COPY . .
 EXPOSE 5000
 
 # For development usage only
-# CMD [ "npm","run", "dev" ]
+CMD [ "npm","run", "dev" ]
 
 # Change to this before deployment
-CMD ["npm", "start"]
+# CMD ["npm", "start"]
 

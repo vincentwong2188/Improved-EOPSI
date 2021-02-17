@@ -2,30 +2,37 @@ import IattributesRepo from './IAttributesRepo'
 import Attribute from '../entities/attribute'
 import CloudConfig from '../entities/cloudConfig'
 import galois from '@guildofweavers/galois'
+import { initClientFetch, getCloudConfigFetch } from '../../../common/dataAccess/cloudAccess'
 import { query } from '../../../common/dataAccess/dbAccess'
 
 // Accesses data from local database or cloud service
 export default class AttributesRepo implements IattributesRepo {
-    public saveAttributesLocal = async (attribute: Attribute[]) => {
-      // implement save attributes into database here
-      // await query('insert into..', [])
-
+    public saveAttributesLocal = async (attributes: Attribute[]) => {
+      const queryString = `insert into client.attributes (hashed_value, name, phone) values ${attributes.map((attr) => `(${attr.getHashedValue()}, '${attr.name}', ${attr.number})`).join(',')}`
+      await query(queryString)
     }
 
+    // gets the configurations from the cloud
     public async getCloudConfig () : Promise<CloudConfig> {
-      // Cloud config: TODO: To be called from the cloud
-      const numBins = 10
-      const numElementsPerBin = 5
-      // const finiteFieldNum = 2n ** 256n - 351n * 2n ** 32n + 1n
-      const finiteFieldNum = 1931n
-      const smallFiniteFieldNum = 1931n
+      const res = await getCloudConfigFetch()
+      const { cloudConfig: cloudConfigString } = await res.json()
+      const cloudConfig = JSON.parse(cloudConfigString)
 
-      const xi = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n, 11n]
+      const numBins = cloudConfig.numBins
+      const numElementsPerBin = cloudConfig.numElementsPerBin
+      const finiteFieldNum = BigInt(cloudConfig.finiteFieldNum)
+      const smallFiniteFieldNum = BigInt(cloudConfig.smallFiniteFieldNum)
+      const vectorX = cloudConfig.vectorX.map((x: string) => BigInt(x))
 
-      return new CloudConfig(numBins, numElementsPerBin, finiteFieldNum, smallFiniteFieldNum, xi)
+      return new CloudConfig(numBins, numElementsPerBin, finiteFieldNum, smallFiniteFieldNum, vectorX)
     }
 
-    public async saveAttributesCloud (attributes: galois.Matrix) : Promise<void> {
-      // Calls the cloud endpoint to save the attributes
+    public async saveAttributesCloud (blindedVectors: galois.Matrix, clientID: string) : Promise<void> {
+      const stringified = JSON.stringify(blindedVectors, (key, value) =>
+        typeof value === 'bigint'
+          ? value.toString()
+          : value // return everything else unchanged
+      )
+      await initClientFetch(stringified, clientID)
     }
 }

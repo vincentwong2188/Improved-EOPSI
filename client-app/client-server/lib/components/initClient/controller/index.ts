@@ -7,13 +7,6 @@ import AttributesRepo from '../dataAccess/attributesRepo'
 const router = express.Router()
 const galois = require('@guildofweavers/galois')
 
-// Temporary inputs: For testing purposes only. Frontend will be sending these attributes
-const a = [
-  { name: 'Vincent', number: '91234567' },
-  { name: 'Collin', number: '91234456' },
-  { name: 'Alex', number: '91234566' }
-]
-const password = 12345n
 /*
   request body:
   - Array of attribute objects: (Converted into a hashed value at the service layer)
@@ -23,23 +16,28 @@ const password = 12345n
 */
 
 router.post('/initClient', async (req, res) => {
+  const attributesRequest = req.body.attributes
+  const password = BigInt(req.body.password)
+  const clientID = req.body.clientID // Client should be sending to the BE an autorization token or it will be possible to fake identity
+
   const attributeRepoInstance = new AttributesRepo()
   const initClientServiceInstance = Container.get(InitClientService)
 
   // 1) Get cloud config
   const cloudConfig = await initClientServiceInstance.getCloudAttributes(attributeRepoInstance)
+  console.log('Retreived cloud config')
   const field = galois.createPrimeField(cloudConfig.finiteFieldNum)
 
   // 2) Generate mk from password
   const mk = field.prng(password).toString()
 
   // 3) Create the attributes entity
-  const attributes = a.map(({ name, number }: {name: string, number: string}) => {
+  const attributes = attributesRequest.map(({ name, number }: {name: string, number: string}) => {
     return new Attribute(name, parseInt(number), field, getHash)
   })
 
   // 4) Call initClient
-  initClientServiceInstance.initClient({ attributes, mk, cloudConfig, field }, attributeRepoInstance).then(({ blindedVectors }) => {
+  initClientServiceInstance.initClient({ attributes, mk, cloudConfig, field, clientID }, attributeRepoInstance).then(({ blindedVectors }) => {
     const stringified = JSON.stringify(blindedVectors, (key, value) =>
       typeof value === 'bigint'
         ? value.toString()

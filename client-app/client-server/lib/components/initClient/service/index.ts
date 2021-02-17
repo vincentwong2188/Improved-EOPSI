@@ -6,6 +6,7 @@ import Igalois from '@guildofweavers/galois'
 const galois = require('@guildofweavers/galois')
 
 interface initClientRequest {
+  clientID: string;
   attributes: Attribute[];
   mk: string;
   cloudConfig: CloudConfig
@@ -18,19 +19,20 @@ export default class InitClientService {
     return dataAccess.getCloudConfig()
   }
 
-  public async initClient ({ attributes, mk, cloudConfig, field } : initClientRequest, dataAccess: IAttributesRepo) : Promise<{blindedVectors: Igalois.Matrix}> {
+  public async initClient ({ clientID, attributes, mk, cloudConfig, field } : initClientRequest, dataAccess: IAttributesRepo) : Promise<{blindedVectors: Igalois.Matrix}> {
     // 1) Save attributes into local DB
     await dataAccess.saveAttributesLocal(attributes)
+    console.log('Saved data to local DB')
 
     // 2) Compute blinded vectors: O(x)
     const blindedVectors = this.computeBlindedVectors(attributes, mk, cloudConfig, field)
+    console.log('Computed blinded vectors')
 
     // 3) Send values to be stored in the cloud
-    await dataAccess.saveAttributesCloud(blindedVectors)
+    await dataAccess.saveAttributesCloud(blindedVectors, clientID)
     return { blindedVectors }
   }
 
-  // TODO: Logic
   // Takes in array of hashed attributes and returns an array of point value forms
   private computeBlindedVectors (attributes: Attribute[], mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField): Igalois.Matrix {
     // Initialise hash tables
