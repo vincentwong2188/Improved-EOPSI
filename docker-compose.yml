@@ -1,0 +1,52 @@
+version: "3"
+
+# FROM DOCKER DOCUMENTATION:
+# By default Compose sets up a single network for your app.
+# Each container for a service joins the default network and is both reachable by other containers on that network,
+# and discoverable by them at a hostname identical to the container name.
+
+services:
+  cloud-server:
+    build:
+      context: "./cloud-app/server"
+    # image: "limcollintj/eopsi-client"
+    ports:
+      - "5001:5001"
+    volumes:
+      - "./cloud-app/server:/app"
+    # The AWS t2 micro instance can allow up to 1 GB of ram. Be careful when increasing mem limit
+    mem_limit: 500m
+    depends_on:
+      - "cloud-db"
+  client-server:
+    build:
+      context: "./client-app/client-server"
+    # image: "limcollintj/eopsi-client"
+    ports:
+      - "5000:5000"
+    volumes:
+      - "./client-app/client-server:/app"
+    # The AWS t2 micro instance can allow up to 1 GB of ram. Be careful when increasing mem limit
+    mem_limit: 500m
+    depends_on:
+      - "client-db"
+  client-db:
+    image: "postgres:12.5"
+    restart: always
+    volumes:
+      - ./client-app/client-db/db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    mem_limit: 300m
+    env_file:
+      - ./env/db.env
+  cloud-db:
+    image: "postgres:12.5"
+    restart: always
+    volumes:
+      - ./cloud-app/client-db/db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    mem_limit: 300m
+    env_file:
+      - ./env/db.env
