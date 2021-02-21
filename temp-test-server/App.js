@@ -3,23 +3,51 @@ const galois = require("@guildofweavers/galois");
 // Constants
 
 const LARGE_PRIME_NUMBER = 2n ** 256n - 351n * 2n ** 32n + 1n
-const SMALL_PRIME_NUMBER = 1931n
+// const SMALL_PRIME_NUMBER = 1931n
+const SMALL_PRIME_NUMBER = 351n * 2n ** 32n + 1n
+const SMALLER_PRIME_NUMBER = 97n
+
 
 // const LARGE_PRIME_NUMBER = 99999989n
 // const SMALL_PRIME_NUMBER = 1931n
 
-
 const field = galois.createPrimeField(LARGE_PRIME_NUMBER);
-const hashField = galois.createPrimeField(SMALL_PRIME_NUMBER);
+const smallField = galois.createPrimeField(SMALL_PRIME_NUMBER);
+const smallerField = galois.createPrimeField(SMALLER_PRIME_NUMBER);
 
-const NUMBER_OF_BINS = 4;
-const MAXIMUM_LOAD = 7;
+console.time('Test Time')
+const NUMBER_OF_BINS = 20;
+const MAXIMUM_LOAD = 100;
 const MASTER_KEY_CLIENTA = 218n;
 const MASTER_KEY_CLIENTB = 123n;
 
-const clientAAttributes = [31n, 49n, 23n, 72n, 28n, 92n, 12n, 2n]
-const clientBAttributes = [23n, 49n, 25n, 31n, 72n, 22n, 50n, 2n]
-const vectorX = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n, 11n, 12n, 13n, 14n, 15n]
+const ATTRIBUTE_COUNT = 1000
+
+const clientAAttributes = []
+const clientBAttributes = []
+const vectorX = []
+
+for (let i = 0; i < ATTRIBUTE_COUNT; i++){
+    const attributeA = smallerField.rand()
+    const attributeB = smallerField.rand()
+
+    clientAAttributes.push(attributeA)
+    clientBAttributes.push(attributeB)
+
+}
+
+for (let i = 1; i<= 2* MAXIMUM_LOAD + 1; i++){
+    vectorX.push(BigInt(i))
+}
+
+console.log('Client A Attributes: ' + clientAAttributes)
+console.log('Client B Attributes: ' + clientBAttributes)
+console.log('Vector X: ' + vectorX)
+
+// const clientAAttributes = [31n, 49n, 23n, 72n, 28n, 92n, 12n, 2n]
+// const clientBAttributes = [23n, 49n, 25n, 31n, 72n, 22n, 50n, 2n]
+
+// const vectorX = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n, 11n, 12n, 13n, 14n, 15n]
 
 const hashTableClientA = []
 const hashTableClientB = []
@@ -50,12 +78,12 @@ for (let i = 0; i < NUMBER_OF_BINS; i++) {
 
 // Concatenating the Attribute values with its hash -> attribute||00||hash(attribute)
 const clientAConcateAttributes = clientAAttributes.map(attribute => {
-    const hashValue = hashField.prng(attribute);
+    const hashValue = smallField.prng(attribute);
     return BigInt(String(attribute) + "00" + String(hashValue))
 })
 
 const clientBConcateAttributes = clientBAttributes.map(attribute => {
-    const hashValue = hashField.prng(attribute);
+    const hashValue = smallField.prng(attribute);
     return BigInt(String(attribute) + "00" + String(hashValue))
 })
 
@@ -126,12 +154,12 @@ console.log()
 // Creating Blinding Factors
 
 for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    const hashValueA = hashField.prng(BigInt(String(MASTER_KEY_CLIENTA) + String(i * 20)));
-    const hashValueB = hashField.prng(BigInt(String(MASTER_KEY_CLIENTB) + String(i * 20)));
+    const hashValueA = smallField.prng(BigInt(String(MASTER_KEY_CLIENTA) + String(i * 20)));
+    const hashValueB = smallField.prng(BigInt(String(MASTER_KEY_CLIENTB) + String(i * 20)));
 
     for (let j = 0; j < 2 * MAXIMUM_LOAD + 1; j++) {
-        let blindingFactorA = hashField.prng(BigInt(String(hashValueA) + String(j * 20)))
-        let blindingFactorB = hashField.prng(BigInt(String(hashValueB) + String(j * 20)))
+        let blindingFactorA = smallField.prng(BigInt(String(hashValueA) + String(j * 20)))
+        let blindingFactorB = smallField.prng(BigInt(String(hashValueB) + String(j * 20)))
 
         // To avoid a dividing by zero problem:
         if (blindingFactorA === 0n) {
@@ -308,7 +336,7 @@ answerArray.forEach(bin => {
             const value = String(answer).split('00')[0]
             const hash = String(answer).split('00')[1]
 
-            if (hash !== undefined && BigInt(hash) === hashField.prng(BigInt(value))) {
+            if (hash !== undefined && BigInt(hash) === smallField.prng(BigInt(value))) {
                 realAnswerArray.push(value)
             }
 
@@ -321,3 +349,8 @@ console.log(` ------------------  Answer Array (Only Real Values) --------------
 console.log(realAnswerArray)
 console.log()
 
+console.log('Client A Attributes: ' + clientAAttributes)
+console.log('Client B Attributes: ' + clientBAttributes)
+console.log('Vector X: ' + vectorX)
+
+console.timeEnd(`Test Time`)
