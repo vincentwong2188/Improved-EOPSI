@@ -1,10 +1,10 @@
-import express from 'express'
+import express, {Request, Response} from 'express'
 import { Container } from 'typedi'
 import InitClientService from '../../initClient/service'
 import ResultsRetrievalService from '../service'
 import { getHash } from '../../../common/util/hashAttributes'
 import Attribute from '../entities/attribute'
-import AttributesRepo from '../dataAccess/attributesRepo'
+import AttributesRepo from '../../initClient/dataAccess/attributesRepo'
 const router = express.Router()
 const galois = require('@guildofweavers/galois')
 
@@ -19,7 +19,7 @@ const galois = require('@guildofweavers/galois')
 
 */
 
-router.get('/resultsRetrieval', async (req, res) => {
+router.post('/resultsRetrieval', async (req, res) => {
   const attributesRequest = req.body.attributes
   const password = BigInt(req.body.password)
   const qPrime = req.body.qPrime

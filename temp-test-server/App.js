@@ -7,21 +7,20 @@ const LARGE_PRIME_NUMBER = 2n ** 256n - 351n * 2n ** 32n + 1n
 const SMALL_PRIME_NUMBER = 351n * 2n ** 32n + 1n
 const SMALLER_PRIME_NUMBER = 97n
 
-
 // const LARGE_PRIME_NUMBER = 99999989n
 // const SMALL_PRIME_NUMBER = 1931n
+console.time('Full Protocol Time')
 
 const field = galois.createPrimeField(LARGE_PRIME_NUMBER);
 const smallField = galois.createPrimeField(SMALL_PRIME_NUMBER);
 const smallerField = galois.createPrimeField(SMALLER_PRIME_NUMBER);
 
-console.time('Test Time')
-const NUMBER_OF_BINS = 20;
+const NUMBER_OF_BINS = 7282;
 const MAXIMUM_LOAD = 100;
 const MASTER_KEY_CLIENTA = 218n;
 const MASTER_KEY_CLIENTB = 123n;
 
-const ATTRIBUTE_COUNT = 1000
+const ATTRIBUTE_COUNT = 262144
 
 const clientAAttributes = []
 const clientBAttributes = []
@@ -31,18 +30,20 @@ for (let i = 0; i < ATTRIBUTE_COUNT; i++){
     const attributeA = smallerField.rand()
     const attributeB = smallerField.rand()
 
+    // clientAAttributes.push(BigInt(i))
+    // clientBAttributes.push(BigInt(i+1000))
+
     clientAAttributes.push(attributeA)
     clientBAttributes.push(attributeB)
-
 }
 
 for (let i = 1; i<= 2* MAXIMUM_LOAD + 1; i++){
     vectorX.push(BigInt(i))
 }
 
-console.log('Client A Attributes: ' + clientAAttributes)
-console.log('Client B Attributes: ' + clientBAttributes)
-console.log('Vector X: ' + vectorX)
+// console.log('Client A Attributes: ' + clientAAttributes)
+// console.log('Client B Attributes: ' + clientBAttributes)
+// console.log('Vector X: ' + vectorX)
 
 // const clientAAttributes = [31n, 49n, 23n, 72n, 28n, 92n, 12n, 2n]
 // const clientBAttributes = [23n, 49n, 25n, 31n, 72n, 22n, 50n, 2n]
@@ -78,13 +79,23 @@ for (let i = 0; i < NUMBER_OF_BINS; i++) {
 
 // Concatenating the Attribute values with its hash -> attribute||00||hash(attribute)
 const clientAConcateAttributes = clientAAttributes.map(attribute => {
-    const hashValue = smallField.prng(attribute);
-    return BigInt(String(attribute) + "00" + String(hashValue))
+    const hashValue = String(smallField.prng(attribute));
+    let pad = ''; 
+    for(let i=0; i< String(SMALLER_PRIME_NUMBER).length - hashValue.length ; i++){
+        pad += '0'
+    }
+
+    return BigInt(hashValue + pad + String(attribute))
 })
 
 const clientBConcateAttributes = clientBAttributes.map(attribute => {
-    const hashValue = smallField.prng(attribute);
-    return BigInt(String(attribute) + "00" + String(hashValue))
+    const hashValue = String(smallField.prng(attribute));
+    let pad = ''; 
+    for(let i=0; i< String(SMALLER_PRIME_NUMBER).length - hashValue.length ; i++){
+        pad += '0'
+    }
+
+    return BigInt(hashValue + pad + String(attribute))
 })
 
 // Hashing the attributes into bins
@@ -111,13 +122,13 @@ for (let i = 0; i < NUMBER_OF_BINS; i++) {
     }
 }
 
-console.log(' ------------------ Hash Table ------------------')
-console.log('Hash Table (Client A):')
-console.log(hashTableClientA)
-console.log()
-console.log('Hash Table (Client B):')
-console.log(hashTableClientB)
-console.log()
+// console.log(' ------------------ Hash Table ------------------')
+// console.log('Hash Table (Client A):')
+// console.log(hashTableClientA)
+// console.log()
+// console.log('Hash Table (Client B):')
+// console.log(hashTableClientB)
+// console.log()
 
 // Creating the Polynomials in Point Value Representation
 vectorX.forEach(x => {
@@ -131,7 +142,6 @@ vectorX.forEach(x => {
         hashTablePointValueA[i].push(answer)
     }
 
-
     for (let i = 0; i < NUMBER_OF_BINS; i++) {
         let answer = 1n;
 
@@ -142,14 +152,13 @@ vectorX.forEach(x => {
     }
 })
 
-console.log(' ------------------ Hash Table Point Values ------------------')
-console.log('Hash Table Point Values (Client A):')
-console.log(hashTablePointValueA)
-console.log()
-console.log('Hash Table Point Values (Client B):')
-console.log(hashTablePointValueB)
-console.log()
-
+// console.log(' ------------------ Hash Table Point Values ------------------')
+// console.log('Hash Table Point Values (Client A):')
+// console.log(hashTablePointValueA)
+// console.log()
+// console.log('Hash Table Point Values (Client B):')
+// console.log(hashTablePointValueB)
+// console.log()
 
 // Creating Blinding Factors
 
@@ -173,13 +182,13 @@ for (let i = 0; i < NUMBER_OF_BINS; i++) {
     }
 }
 
-console.log(' ------------------ Blinding Factors ------------------')
-console.log('Blinding Factors (Client A):')
-console.log(blindingFactorsA)
-console.log()
-console.log('Blinding Factors (Client B):')
-console.log(blindingFactorsB)
-console.log()
+// console.log(' ------------------ Blinding Factors ------------------')
+// console.log('Blinding Factors (Client A):')
+// console.log(blindingFactorsA)
+// console.log()
+// console.log('Blinding Factors (Client B):')
+// console.log(blindingFactorsB)
+// console.log()
 
 // Blinding the Point Value Pairs
 
@@ -192,13 +201,16 @@ const hashTablePointValueBMatrix = field.newMatrixFrom(hashTablePointValueB)
 const blindedValuesAMatrix = field.divMatrixElements(hashTablePointValueAMatrix, blindingFactorsAMatrix)
 const blindedValuesBMatrix = field.divMatrixElements(hashTablePointValueBMatrix, blindingFactorsBMatrix)
 
-console.log(' ------------------ Blinded Values (Matrices) ------------------')
-console.log('Blinded Values (Client A):')
-console.log(blindedValuesAMatrix)
-console.log()
-console.log('Blinded Values (Client B):')
-console.log(blindedValuesBMatrix)
-console.log()
+// console.log(' ------------------ Blinded Values (Matrices) ------------------')
+// console.log('Blinded Values (Client A):')
+// console.log(blindedValuesAMatrix)
+// console.log()
+// console.log('Blinded Values (Client B):')
+// console.log(blindedValuesBMatrix)
+// console.log()
+
+
+// console.time(`Starting from Computation Delegation Time`)
 
 // Initiation of Improved EO-PSI
 // Requester: Client B
@@ -228,16 +240,16 @@ randomPolynomialA.forEach((randomPolynomialInBin) => {
     randomPolynomialA_PointValue.push(polyArray)
 })
 
-console.log(' ------------------ Random Polynomial (Client A) ------------------')
-console.log(randomPolynomialA_PointValue)
-console.log()
+// console.log(' ------------------ Random Polynomial (Client A) ------------------')
+// console.log(randomPolynomialA_PointValue)
+// console.log()
 
 const randomPolynomialAMatrix = field.newMatrixFrom(randomPolynomialA_PointValue)
 const qValuesAMatrix = field.mulMatrixElements(randomPolynomialAMatrix, blindingFactorsAMatrix)
 
-console.log(' ------------------ Q Matrix (Client A) ------------------')
-console.log(qValuesAMatrix)
-console.log()
+// console.log(' ------------------ Q Matrix (Client A) ------------------')
+// console.log(qValuesAMatrix)
+// console.log()
 
 // ================================== Cloud Executes Results Computation ==================================
 
@@ -267,20 +279,20 @@ randomPolynomialB.forEach(randomPolynomialInBin => {
     randomPolynomialB_PointValue.push(polyArray)
 })
 
-console.log(' ------------------ Random Polynomial (Cloud) ------------------')
-console.log(randomPolynomialB_PointValue)
-console.log()
+// console.log(' ------------------ Random Polynomial (Cloud) ------------------')
+// console.log(randomPolynomialB_PointValue)
+// console.log()
 
 const randomPolynomialBMatrix = field.newMatrixFrom(randomPolynomialB_PointValue)
 const qPrimePrimeMatrix = field.mulMatrixElements(randomPolynomialBMatrix, blindedValuesBMatrix)
 
-console.log(` ------------------  q' and q" Matrices (Cloud) ------------------`)
-console.log(`q' Matrix:`)
-console.log(qPrimeMatrix)
-console.log()
-console.log(`q" Matrix:`)
-console.log(qPrimePrimeMatrix)
-console.log()
+// console.log(` ------------------  q' and q" Matrices (Cloud) ------------------`)
+// console.log(`q' Matrix:`)
+// console.log(qPrimeMatrix)
+// console.log()
+// console.log(`q" Matrix:`)
+// console.log(qPrimePrimeMatrix)
+// console.log()
 
 // q' + q''(z) = wA T(A) + wB T(B) = g 
 // ================================== Client B Executes Results Retrieval ==================================
@@ -288,9 +300,9 @@ console.log()
 const gMatrix = field.addMatrixElements(qPrimeMatrix, field.mulMatrixElements(qPrimePrimeMatrix, blindingFactorsBMatrix))
 const gValues = gMatrix.toValues()
 
-console.log(` ------------------  g Values (Client B) ------------------`)
-console.log(gValues)
-console.log()
+// console.log(` ------------------  g Values (Client B) ------------------`)
+// console.log(gValues)
+// console.log()
 
 const resultantPolynomial = []
 
@@ -300,10 +312,10 @@ for (let i = 0; i < NUMBER_OF_BINS; i++) {
     resultantPolynomial.push(result)
 }
 
-console.log(` ------------------  Results (Client B) ------------------`)
-console.log('Resultant Polynomial:')
-console.log(resultantPolynomial)
-console.log()
+// console.log(` ------------------  Results (Client B) ------------------`)
+// console.log('Resultant Polynomial:')
+// console.log(resultantPolynomial)
+// console.log()
 
 const answerArray = []
 
@@ -322,9 +334,9 @@ for (let i = 0; i < NUMBER_OF_BINS; i++) {
     answerArray.push(binAnswerArray)
 }
 
-console.log(` ------------------  Answer Array (Real and Junk Values) ------------------`)
-console.log(answerArray)
-console.log()
+// console.log(` ------------------  Answer Array (Real and Junk Values) ------------------`)
+// console.log(answerArray)
+// console.log()
 
 // Removing Fake Attributes from Real Attributes
 
@@ -333,10 +345,24 @@ realAnswerArray = []
 answerArray.forEach(bin => {
     if (bin.length !== 0) {
         bin.forEach(answer => {
-            const value = String(answer).split('00')[0]
-            const hash = String(answer).split('00')[1]
+            const hash = String(answer).slice(0,String(SMALL_PRIME_NUMBER).length)
+            const value = String(answer).slice(String(SMALL_PRIME_NUMBER).length)
 
-            if (hash !== undefined && BigInt(hash) === smallField.prng(BigInt(value))) {
+            // console.log(hash)
+            // console.log(value)
+
+            // const value = String(answer).split('00')[0]
+            // const hash = String(answer).split('00')[1]
+
+            const hashValue = String(smallField.prng(BigInt(value)));
+
+            let pad = ''
+
+            for(let i=0; i< String(SMALLER_PRIME_NUMBER).length - hashValue.length ; i++){
+                pad += '0'
+            }
+
+            if (hash !== undefined && BigInt(hash) === hashValue + pad) {
                 realAnswerArray.push(value)
             }
 
@@ -345,12 +371,14 @@ answerArray.forEach(bin => {
 })
 
 
-console.log(` ------------------  Answer Array (Only Real Values) ------------------`)
+// console.log(` ------------------  Answer Array (Only Real Values) ------------------`)
 console.log(realAnswerArray)
-console.log()
+// console.log()
 
 console.log('Client A Attributes: ' + clientAAttributes)
 console.log('Client B Attributes: ' + clientBAttributes)
-console.log('Vector X: ' + vectorX)
+// console.log('Vector X: ' + vectorX)
 
-console.timeEnd(`Test Time`)
+console.timeEnd(`Full Protocol Time`)
+// console.timeEnd(`Starting from Computation Delegation Time`)
+

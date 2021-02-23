@@ -3,6 +3,7 @@ import logger from './middlewares/logger'
 import express from 'express'
 import testRoute from './test/controller'
 import usersRoute from './initClient/controller'
+import resultsRetrieval from './resultsRetrieval/controller';
 import { corsImpl } from './middlewares/cors'
 
 const router = express.Router()
@@ -17,6 +18,7 @@ router.use(corsImpl) // cors settings
  */
 router.use('/test', testRoute)
 router.use('/initClient', usersRoute)
+router.use('/resultsRetrieval', resultsRetrieval)
 
 /**
  * Authenticated routes

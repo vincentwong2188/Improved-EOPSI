@@ -6,7 +6,6 @@ import Igalois from '@guildofweavers/galois'
 const galois = require('@guildofweavers/galois')
 
 interface resultsRetrievalRequest {
-  clientID: string;
   attributes: Attribute[];
   qPrime: Igalois.Matrix;
   qPrimePrime: Igalois.Matrix;
@@ -17,7 +16,7 @@ interface resultsRetrievalRequest {
 
 @Service()
 export default class ResultsRetrievalService{
-  private async resultsRetrieval ({attributes, qPrime, qPrimePrime, mk, cloudConfig, field}: resultsRetrievalRequest, dataAccess : IAttributesRepo) : Promise<String[]>{
+  public async resultsRetrieval ({attributes, qPrime, qPrimePrime, mk, cloudConfig, field}: resultsRetrievalRequest, dataAccess : IAttributesRepo) : Promise<String[]>{
     
     // Verify if Master Key is the hashed master key saved in client DB
     // TODO
