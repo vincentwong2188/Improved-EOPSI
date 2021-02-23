@@ -13,7 +13,7 @@ interface getIPAddressResponse {
 @Service()
 export default class GetIPAddressService {
   // Get IP address
-  public async getIPAddress ({ clientIDReq } : getIPAddressRequest,dataAccess: IipRepo) : Promise<getIPAddressResponse> {
+  public async getIPAddress ({ clientIDReq } : getIPAddressRequest, dataAccess: IipRepo) : Promise<getIPAddressResponse> {
     const { clientID, ipAddress } = await dataAccess.getIPAddress(clientIDReq)
     return { clientID, ipAddress }
   }
