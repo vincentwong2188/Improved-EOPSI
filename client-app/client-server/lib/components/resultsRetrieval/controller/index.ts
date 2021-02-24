@@ -1,4 +1,4 @@
-import express, {Request, Response} from 'express'
+import express, { Request, Response } from 'express'
 import { Container } from 'typedi'
 import InitClientService from '../../initClient/service'
 import ResultsRetrievalService from '../service'
@@ -39,19 +39,19 @@ router.post('/resultsRetrieval', async (req, res) => {
   const mk = field.prng(password).toString()
 
   // Create attributes entity
-  const attributes = attributesRequest.map(({ name, number }: {name: string, number: string}) => {
+  const attributes = attributesRequest.map(({ name, number }: { name: string, number: string }) => {
     return new Attribute(name, parseInt(number), field, getHash)
   })
 
   // Call Results Retrieval Service
-  resultsRetrievalServiceInstance.resultsRetrieval({ attributes, qPrime, qPrimePrime, mk, cloudConfig, field }, attributeRepoInstance).then(( commonAttributes : String[]) => {
+  resultsRetrievalServiceInstance.resultsRetrieval({ attributes, qPrime, qPrimePrime, mk, cloudConfig, field }, attributeRepoInstance).then((commonAttributes: String[]) => {
     const stringified = JSON.stringify(commonAttributes, (key, value) =>
       typeof value === 'bigint'
         ? value.toString()
-        : value 
+        : value
     )
     res.status(200).json({ status: 200, response: { commonAttributes: stringified } })
-  }).catch((err : any) => {
+  }).catch((err: any) => {
     res.status(500).json({ error: { type: 'general', message: err.message }, status: 500 })
   })
 

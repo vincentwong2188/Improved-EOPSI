@@ -13,7 +13,7 @@ interface initPSIRequest {
 export default class InitPSIService {
   public async initPSI({ requesteeID, requesteeIP }: initPSIRequest): Promise<void> {
     const requesterID = 'clientA'; //retrieve from local db?
-    const requesterIP = Object.values(networkInterfaces()).flat().find(i => i.family == 'IPv4' && !i.internal).address;
+    // const requesterIP = Object.values(networkInterfaces()).flat().find(i => i.family == 'IPv4' && !i.internal).address;
 
     await fetch(requesteeIP + acceptPSIRequestEndpoint, { method: 'POST', body: JSON.stringify({ requesterID }), headers: { 'Content-Type': 'application/json' } })
   }

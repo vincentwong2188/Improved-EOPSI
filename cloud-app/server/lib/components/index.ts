@@ -3,6 +3,7 @@ import logger from './middlewares/logger'
 import express from 'express'
 import initClientRoute from './initClient/controller'
 import getIPAddress from './getIPAddress/controller'
+import resultsComputation from './resultsComputation/controller'
 import { corsImpl } from './middlewares/cors'
 
 const router = express.Router()
@@ -21,5 +22,6 @@ router.use(corsImpl) // cors settings
  */
 router.use('/initClient', initClientRoute)
 router.use('/getIPAddress', getIPAddress)
+router.use('/resultsComputation', resultsComputation)
 
 export default router

@@ -4,9 +4,6 @@ import IAttributesRepo from '../dataAccess/IAttributesRepo'
 import Igalois from '@guildofweavers/galois'
 const galois = require('@guildofweavers/galois')
 
-const fetch = require('node-fetch')
-const acceptPSIRequestEndpoint = '/api/acceptPSIRequest/acceptPSIRequest'
-
 interface acceptPSIRequest {
   requesterID: string
 }
