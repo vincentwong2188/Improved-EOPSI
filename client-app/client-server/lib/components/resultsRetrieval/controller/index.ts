@@ -2,28 +2,27 @@ import express, { Request, Response } from 'express'
 import { Container } from 'typedi'
 import InitClientService from '../../initClient/service'
 import ResultsRetrievalService from '../service'
-import { getHash } from '../../../common/util/hashAttributes'
-import Attribute from '../entities/attribute'
-import AttributesRepo from '../../initClient/dataAccess/attributesRepo'
+import AttributesRepo from '../../dataAccess/attributes/attributesRepo'
+import { unmarshallGaloisMatrix } from '../../../common/util/marshallMatrix'
 const router = express.Router()
 const galois = require('@guildofweavers/galois')
 
 /*
+  This method is called by the cloud
+
   request body:
-  - Array of attribute objects: (Converted into a hashed value at the service layer)
-    - name
-    - phone number
   - password : string
   - qPrime : Igalois.Matrix
   - qPrimePrime : Igalois.Matrix
 
 */
 
-router.post('/resultsRetrieval', async (req, res) => {
-  const attributesRequest = req.body.attributes
-  const password = BigInt(req.body.password)
-  const qPrime = req.body.qPrime
-  const qPrimePrime = req.body.qPrimePrime
+router.post('/resultsRetrieval', async (req: Request, res: Response) => {
+  console.log('Begin results retrieval')
+
+  // const password = BigInt(1234)
+  const qPrime = unmarshallGaloisMatrix(req.body.qPrime)
+  const qPrimePrime = unmarshallGaloisMatrix(req.body.qPrimePrime)
   // const clientID = req.body.clientID
 
   const attributeRepoInstance = new AttributesRepo()
@@ -36,15 +35,11 @@ router.post('/resultsRetrieval', async (req, res) => {
   const field = galois.createPrimeField(cloudConfig.finiteFieldNum)
 
   // Generate mk from password
-  const mk = field.prng(password).toString()
-
-  // Create attributes entity
-  const attributes = attributesRequest.map(({ name, number }: { name: string, number: string }) => {
-    return new Attribute(name, parseInt(number), field, getHash)
-  })
+  // const mk = field.prng(password).toString()
+  const mk = '1234' // for esting purposes
 
   // Call Results Retrieval Service
-  resultsRetrievalServiceInstance.resultsRetrieval({ attributes, qPrime, qPrimePrime, mk, cloudConfig, field }, attributeRepoInstance).then((commonAttributes: String[]) => {
+  resultsRetrievalServiceInstance.resultsRetrieval({ qPrime, qPrimePrime, mk, cloudConfig, field }, attributeRepoInstance).then((commonAttributes: String[]) => {
     const stringified = JSON.stringify(commonAttributes, (key, value) =>
       typeof value === 'bigint'
         ? value.toString()
@@ -54,7 +49,6 @@ router.post('/resultsRetrieval', async (req, res) => {
   }).catch((err: any) => {
     res.status(500).json({ error: { type: 'general', message: err.message }, status: 500 })
   })
-
 })
 
 export default router

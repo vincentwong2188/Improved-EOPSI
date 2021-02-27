@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { Service } from 'typedi'
 import CloudConfig from '../entities/cloudConfig'
 import IAttributesRepo from '../dataAccess/IAttributesRepo'
@@ -10,28 +11,28 @@ interface acceptPSIRequest {
 
 @Service()
 export default class AcceptPSIRequestService {
-  public async getCloudAttributes(dataAccess: IAttributesRepo): Promise<CloudConfig> {
+  public async getCloudAttributes (dataAccess: IAttributesRepo): Promise<CloudConfig> {
     return dataAccess.getCloudConfig()
   }
 
-  public async acceptPSIRequest({ requesterID: string }: acceptPSIRequest): Promise<{ approved: boolean; password: string; }> {
-    //Use requesterID to send notif to FE to seek approval and retrieve password
-    const approved = true;
-    const password = "password"; //take in from FE
+  public async acceptPSIRequest ({ requesterID: string }: acceptPSIRequest): Promise<{ approved: boolean; password: string; }> {
+    // Use requesterID to send notif to FE to seek approval and retrieve password
+    const approved = true
+    const password = 'password' // take in from FE
 
     return { approved, password }
   }
 
-  public async computationDelegation(requesterID: string, mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField, dataAccess: IAttributesRepo): Promise<void> {
+  public async computationDelegation ({ requesterID, mk, cloudConfig, field }: {requesterID: string, mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField}, dataAccess: IAttributesRepo): Promise<void> {
     const qMatrix = this.calculateQMatrix(mk, cloudConfig, field)
 
-    const requesteeID = "requesteeID" //TODO: retrieve requesteeID
+    const requesteeID = 'requesteeID' // TODO: retrieve requesteeID
 
     await dataAccess.resultsComputation(qMatrix, requesterID, requesteeID)
   }
 
-  private calculateQMatrix(mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField): Igalois.Matrix {
-    const tk = 321n;
+  private calculateQMatrix (mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField): Igalois.Matrix {
+    const tk = 321n
 
     const randomPolynomialA: bigint[][] = []
     const blindingFactorsA: bigint[][] = []
@@ -42,11 +43,11 @@ export default class AcceptPSIRequestService {
     }
 
     for (let i = 0; i < cloudConfig.numBins; i++) {
-      const hashValue = field.prng(BigInt(String(tk) + String(i * 20)));
+      const hashValue = field.prng(BigInt(String(tk) + String(i * 20)))
 
       // Creating degree d random polynomial - note: degree d polynomial has d+1 coefficients
       for (let j = 0; j < cloudConfig.numElementsPerBin + 1; j++) {
-        const coefficient = field.prng(BigInt(String(hashValue) + String(j * 20)));
+        const coefficient = field.prng(BigInt(String(hashValue) + String(j * 20)))
         randomPolynomialA[i].push(coefficient)
       }
     }
@@ -80,7 +81,7 @@ export default class AcceptPSIRequestService {
   }
 
   // Generates an array of blinding vectors
-  private static generateBlindingVectors(mk: string, numBins: number, numElementsPerBin: number, hashField: Igalois.FiniteField, blindingFactorsA: bigint[][]): void {
+  private static generateBlindingVectors (mk: string, numBins: number, numElementsPerBin: number, hashField: Igalois.FiniteField, blindingFactorsA: bigint[][]): void {
     // Creating Blinding Factors
     for (let i = 0; i < numBins; i++) {
       const hashValueA = hashField.prng(BigInt(String(mk) + String(i * 20)))

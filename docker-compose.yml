@@ -30,6 +30,18 @@ services:
     mem_limit: 500m
     depends_on:
       - "client-db"
+  client-server-b:
+    build:
+      context: "./client-app_B/client-server"
+    # image: "limcollintj/eopsi-client"
+    ports:
+      - "5002:5002"
+    volumes:
+      - "./client-app_B/client-server:/app"
+    # The AWS t2 micro instance can allow up to 1 GB of ram. Be careful when increasing mem limit
+    mem_limit: 500m
+    depends_on:
+      - "client-db"
   client-db:
     image: "postgres:12.5"
     restart: always
@@ -37,6 +49,16 @@ services:
       - ./client-app/client-db/db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    mem_limit: 300m
+    env_file:
+      - ./env/db.env
+  client-db_b:
+    image: "postgres:12.5"
+    restart: always
+    volumes:
+      - ./client-app_B/client-db/db_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
     mem_limit: 300m
     env_file:
       - ./env/db.env

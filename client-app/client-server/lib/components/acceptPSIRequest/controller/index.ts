@@ -15,13 +15,12 @@ const galois = require('@guildofweavers/galois')
 
 router.post('/acceptPSIRequest', async (req, res) => {
   const requesterID = req.body.requesterID
-
   const attributeRepoInstance = new AttributesRepo()
   const acceptPSIRequestServiceInstance = Container.get(AcceptPSIRequestService)
 
-  const {approved, password} = await acceptPSIRequestServiceInstance.acceptPSIRequest({requesterID})
+  const { approved, password } = await acceptPSIRequestServiceInstance.acceptPSIRequest({ requesterID })
 
-  if (Boolean(approved) == false) {
+  if (!approved) {
     res.status(200).json({ status: 200, response: { success: false } })
   }
 
@@ -32,20 +31,23 @@ router.post('/acceptPSIRequest', async (req, res) => {
   // 2) Generate mk from password
   const mk = field.prng(password).toString()
 
-  //hash computed mk
-  //retrieve stored hashed mk
-  const hashedmk = "hashedmk"
+  // hash computed mk
+  // retrieve stored hashed mk
+  const hashedmk = 'hashedmk'
 
-  if (hashedmk != mk) {
+  if (hashedmk !== mk) {
     res.status(500).json({ error: { type: 'general', message: 'password incorrect' }, status: 500 })
   }
 
-  acceptPSIRequestServiceInstance.computationDelegation({requesterID}, mk, cloudConfig, field).then(() => {
-    res.status(200).json({ status: 200, response: { success: true } })
-  }).catch(err => {
+  if (typeof requesterID === 'string') {
+    acceptPSIRequestServiceInstance.computationDelegation({ requesterID, mk, cloudConfig, field }, attributeRepoInstance).then(() => {
+      res.status(200).json({ status: 200, response: { success: true } })
+    }).catch(err => {
       res.status(500).json({ error: { type: 'general', message: err.message }, status: 500 })
-  })
-
+    })
+  } else {
+    res.status(500).json({ error: { type: 'general', message: 'bad request' }, status: 500 })
+  }
 })
 
 export default router

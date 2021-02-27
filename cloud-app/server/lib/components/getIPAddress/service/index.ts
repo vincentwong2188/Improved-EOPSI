@@ -7,7 +7,7 @@ interface getIPAddressRequest {
 interface getIPAddressResponse {
   clientID: string;
   ipAddress: string;
-  
+
 }
 
 @Service()

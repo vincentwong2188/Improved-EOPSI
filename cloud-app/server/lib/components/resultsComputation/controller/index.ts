@@ -6,10 +6,12 @@ import ResultsComputationService from '../service'
 import DataRepo from '../dataAccess/dataRepo'
 import AttributesRepo from '../../initClient/dataAccess/attributesRepo'
 import IPRepo from '../../getIPAddress/dataAccess/ipRepo'
+import { parseStringToMatrix } from '../../../common/util'
 const router = express.Router()
 const galois = require('@guildofweavers/galois')
 
-router.post('/initClient', async (req, res) => {
+router.post('/resultsComputation', async (req, res) => {
+  console.log('Cloud server begin results computation')
   const initClientServiceInstance = Container.get(InitClientService)
   const getIPAddressServiceInstance = Container.get(GetIPAddressService)
   const resultsComputationServiceInstance = Container.get(ResultsComputationService)
@@ -19,20 +21,24 @@ router.post('/initClient', async (req, res) => {
 
   const requesteeID = req.body.requesteeID
   const requesterID = req.body.requesterID
-  const qMatrix = req.body.qMatrix
+  const qMatrix : bigint[][] = parseStringToMatrix(req.body.qMatrix)
 
   // Get cloud config
-  const cloudConfig = await initClientServiceInstance.getCloudAttributes(attributeRepoInstance)
+  const cloudConfig = await initClientServiceInstance.getCloudConfig(attributeRepoInstance)
   const field = galois.createPrimeField(cloudConfig.finiteFieldNum)
 
-  const requesteeBlindedData = await resultsComputationServiceInstance.retrieveBlindedAttributes({ requesteeID }, dataRepoInstance)
-  const requesterBlindedData = await resultsComputationServiceInstance.retrieveBlindedAttributes({ requesterID }, dataRepoInstance)
+  const requesteeBlindedData = await resultsComputationServiceInstance.retrieveBlindedAttributes({ clientID: requesteeID }, dataRepoInstance)
+  const requesterBlindedData = await resultsComputationServiceInstance.retrieveBlindedAttributes({ clientID: requesterID }, dataRepoInstance)
 
-  const requesteeBlindedMatrix = JSON.parse(requesteeBlindedData.blindedAttributes)
-  const requesterBlindedMatrix = JSON.parse(requesterBlindedData.blindedAttributes)
+  console.log('Cloud server retreived client A and client B blinded data', requesteeID, requesterID)
 
+  const requesteeBlindedMatrix : bigint[][] = requesteeBlindedData.blindedAttributes.getParsedBlindedAttributes()
+  const requesterBlindedMatrix : bigint[][] = requesterBlindedData.blindedAttributes.getParsedBlindedAttributes()
+
+  // Result computation occurs
   const computedResults = await resultsComputationServiceInstance.resultsComputation({ qMatrix, requesterID, requesteeID, requesterBlindedMatrix, requesteeBlindedMatrix, cloudConfig, field }, dataRepoInstance)
-  const requesterIP = await getIPAddressServiceInstance.getIPAddress({ requesterID }, ipRepoInstance)
+
+  const requesterIP = await getIPAddressServiceInstance.getIPAddress({ clientIDReq: requesterID }, ipRepoInstance)
 
   resultsComputationServiceInstance.sendComputedResults(computedResults, requesterIP.ipAddress).then(() => {
     res.status(200).json({ status: 200, response: { success: true } })

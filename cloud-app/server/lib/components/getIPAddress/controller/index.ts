@@ -10,7 +10,7 @@ router.get('/getIPAddress', async (req, res) => {
   const ipRepoInstance = new IPRepo()
   const clientID = req.body.clientID
 
-  getIPAddressServiceInstance.getIPAddress({clientID}, ipRepoInstance).then(ipAddress => {
+  getIPAddressServiceInstance.getIPAddress({ clientIDReq: clientID }, ipRepoInstance).then(ipAddress => {
     const stringified = JSON.stringify(ipAddress, (key, value) =>
       typeof value === 'bigint'
         ? value.toString()

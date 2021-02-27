@@ -1,42 +1,53 @@
+/* eslint-disable camelcase */
 import { Service } from 'typedi'
-import Attribute from '../entities/attribute'
-import CloudConfig from '../entities/cloudConfig'
-import IAttributesRepo from '../dataAccess/IAttributesRepo'
+import Attribute from '../../entities/attribute'
+import CloudConfig from '../../entities/cloudConfig'
+import IAttributesRepo from '../../dataAccess/attributes/IAttributesRepo'
 import Igalois from '@guildofweavers/galois'
+import { checkHashValue, concatenateAttribute } from '../../../common/util/concat'
 const galois = require('@guildofweavers/galois')
 
 interface resultsRetrievalRequest {
-  attributes: Attribute[];
-  qPrime: Igalois.Matrix;
-  qPrimePrime: Igalois.Matrix;
+  qPrime: bigint[][];
+  qPrimePrime: bigint[][];
   mk: string;
   cloudConfig: CloudConfig;
   field: Igalois.FiniteField;
 }
 
 @Service()
-export default class ResultsRetrievalService{
-  public async resultsRetrieval ({attributes, qPrime, qPrimePrime, mk, cloudConfig, field}: resultsRetrievalRequest, dataAccess : IAttributesRepo) : Promise<String[]>{
-    
+export default class ResultsRetrievalService {
+  public async resultsRetrieval ({ qPrime, qPrimePrime, mk, cloudConfig, field }: resultsRetrievalRequest, dataAccess : IAttributesRepo) : Promise<String[]> {
+    // Convert qprime and qprimeprime to galois matrix
+    const _qPrime = field.newMatrixFrom(qPrime)
+    const _qPrimePrime = field.newMatrixFrom(qPrimePrime)
+
+    // Retrieve attributes from stored DB
+    const localAttributesUnmarshalled = await dataAccess.getLocalAttributes()
+    const localAttributes = localAttributesUnmarshalled.map(({ hashed_value, name, phone }) => {
+      return new Attribute(name, phone, { hashedValue: hashed_value })
+    })
     // Verify if Master Key is the hashed master key saved in client DB
     // TODO
 
     const hashField : Igalois.FiniteField = galois.createPrimeField(cloudConfig.smallFiniteFieldNum)
-    const blindingFactorsA : bigint[][] = ResultsRetrievalService.generateBlindingFactors(mk, cloudConfig.numBins, cloudConfig.numElementsPerBin, hashField)
-    const resultPolynomial = ResultsRetrievalService.getResultantPolynomial(qPrime, qPrimePrime, blindingFactorsA, cloudConfig, field)
-    const intersectionResult = ResultsRetrievalService.factorisePolynomial(resultPolynomial, attributes, cloudConfig, field, hashField)
+    const blindingFactorsA : Igalois.Matrix = ResultsRetrievalService.generateBlindingFactors(mk, cloudConfig.numBins, cloudConfig.numElementsPerBin, hashField)
 
+    const resultPolynomial = ResultsRetrievalService.getResultantPolynomial(_qPrime, _qPrimePrime, blindingFactorsA, cloudConfig, field)
+    console.log('Result polynomial')
+    const intersectionResult = ResultsRetrievalService.factorisePolynomial(resultPolynomial, localAttributes, cloudConfig, field, hashField)
+
+    console.log('Final Intersection:', intersectionResult)
     return intersectionResult
   }
 
-  private static generateBlindingFactors (mk: string, numBins: number, numElementsPerBin: number, hashField: Igalois.FiniteField) : bigint[][] {
-    
+  private static generateBlindingFactors (mk: string, numBins: number, numElementsPerBin: number, hashField: Igalois.FiniteField) : Igalois.Matrix {
+    console.log('Generating blinding factors')
     const blindingFactorsA : bigint [][] = []
-    
     // Creating Blinding Factors
     for (let i = 0; i < numBins; i++) {
       const hashValueA = hashField.prng(BigInt(String(mk) + String(i * 20)))
-
+      blindingFactorsA.push([])
       for (let j = 0; j < 2 * numElementsPerBin + 1; j++) {
         let blindingFactorA = hashField.prng(BigInt(String(hashValueA) + String(j * 20)))
 
@@ -44,33 +55,44 @@ export default class ResultsRetrievalService{
         if (blindingFactorA === 0n) {
           blindingFactorA = 1n
         }
-
         blindingFactorsA[i].push(blindingFactorA)
       }
     }
-    return blindingFactorsA
+    console.log('Blinding factors generated')
+
+    return hashField.newMatrixFrom(blindingFactorsA)
   }
 
-  private static getResultantPolynomial (qPrime : Igalois.Matrix, qPrimePrime : Igalois.Matrix, blindingFactors: bigint[][], cloudConfig: CloudConfig, field: Igalois.FiniteField) : Igalois.Vector[] {
-    const gMatrix = field.addMatrixElements(qPrime, field.mulMatrixElements(qPrimePrime, field.newMatrixFrom(blindingFactors)))
-    const gValues = gMatrix.toValues()
+  private static getResultantPolynomial (qPrime : Igalois.Matrix, qPrimePrime : Igalois.Matrix, blindingFactors: Igalois.Matrix, cloudConfig: CloudConfig, field: Igalois.FiniteField) : Igalois.Vector[] {
+    console.log('Stating get resultant polynomial')
 
-    const resultantPolynomial = []
+    try {
+      const gMatrix = field.addMatrixElements(qPrime, field.mulMatrixElements(qPrimePrime, blindingFactors))
+      // console.log(gMatrix)
+      const gValues = gMatrix.toValues()
+      console.log(gValues)
 
-    for (let i = 0; i < cloudConfig.numBins; i++) {
+      const resultantPolynomial = []
+
+      for (let i = 0; i < cloudConfig.numBins; i++) {
         const polynomialYVector = field.newVectorFrom(gValues[i])
         const result = field.interpolate(field.newVectorFrom(cloudConfig.vectorX), polynomialYVector)
         resultantPolynomial.push(result)
-    }
+      }
+      console.log(resultantPolynomial)
 
-    return resultantPolynomial
-    
+      return resultantPolynomial
+    } catch (e) {
+      console.log('ERROR:', e.message)
+      throw new Error(e.message)
+    }
   }
 
   private static factorisePolynomial (resultantPolynomial : Igalois.Vector[], attributes: Attribute[], cloudConfig: CloudConfig, field: Igalois.FiniteField, hashField: Igalois.FiniteField) : String[] {
+    console.log('Starting factorization')
     // Initialise hash table
     const hashTableClient : bigint[][] = []
-    
+
     for (let i = 0; i < cloudConfig.numBins; i++) {
       hashTableClient[i] = []
     }
@@ -79,25 +101,25 @@ export default class ResultsRetrievalService{
     const hashedAttributes = attributes.map((att) => (att.getHashedValue()))
     hashedAttributes.forEach(attribute => {
       const binValue = Number(attribute) % cloudConfig.numBins
-      hashTableClient[binValue].push(attribute)
+      hashTableClient[binValue].push(concatenateAttribute(attribute, hashField, cloudConfig.smallFiniteFieldNum))
     })
-    
+
     // Factorisation Begins here
     const answerArray : bigint[][] = []
 
     for (let i = 0; i < cloudConfig.numBins; i++) {
-        const binAnswerArray : bigint [] = []
+      const binAnswerArray : bigint [] = []
 
-        // Fast "Factorisation"
-        hashTableClient[i].forEach(attribute => {
-            const yValue = field.evalPolyAt(resultantPolynomial[i], BigInt(attribute))
+      // Fast "Factorisation"
+      hashTableClient[i].forEach(attribute => {
+        const yValue = field.evalPolyAt(resultantPolynomial[i], BigInt(attribute))
 
-            if (yValue === 0n) {
-                binAnswerArray.push(attribute)
-            }
-        })
+        if (yValue === 0n) {
+          binAnswerArray.push(attribute)
+        }
+      })
 
-        answerArray.push(binAnswerArray)
+      answerArray.push(binAnswerArray)
     }
 
     // Removing Fake Attributes from Real Attributes
@@ -105,32 +127,24 @@ export default class ResultsRetrievalService{
     const realAnswerArray : bigint[] = []
 
     answerArray.forEach(bin => {
-        if (bin.length !== 0) {
-            bin.forEach(answer => {
-                const value = String(answer).split('00')[0]
-                const hash = String(answer).split('00')[1]
-
-                if (hash !== undefined && BigInt(hash) === hashField.prng(BigInt(value))) {
-                    realAnswerArray.push(BigInt(value))
-                }
-
-            })
-        }
+      if (bin.length !== 0) {
+        bin.forEach(answer => {
+          const { realValue, value } = checkHashValue(answer, hashField, cloudConfig.smallFiniteFieldNum)
+          if (realValue) {
+            realAnswerArray.push(BigInt(value))
+          }
+        })
+      }
     })
 
     const commonAttributesNames : String[] = []
 
     attributes.forEach(attribute => {
-      if (realAnswerArray.includes(attribute.getHashedValue())){
+      if (realAnswerArray.includes(attribute.getHashedValue())) {
         commonAttributesNames.push(attribute.name)
       }
     })
 
     return commonAttributesNames
-  
   }
 }
-
-
-
-
