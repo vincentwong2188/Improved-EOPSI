@@ -323,7 +323,6 @@ for (let i = 0; i < NUMBER_OF_BINS; i++) {
 
 const answerArray = []
 
-console.log(hashTableClientB)
 for (let i = 0; i < NUMBER_OF_BINS; i++) {
     const binAnswerArray = []
 

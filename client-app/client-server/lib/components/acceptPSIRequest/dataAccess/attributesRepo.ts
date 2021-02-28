@@ -6,7 +6,7 @@ import { getCloudConfigFetch, resultsComputationFetch } from '../../../common/da
 // Accesses data from local database or cloud service
 export default class AttributesRepo implements IattributesRepo {
   // gets the configurations from the cloud
-  public async getCloudConfig(): Promise<CloudConfig> {
+  public async getCloudConfig (): Promise<CloudConfig> {
     const res = await getCloudConfigFetch()
     const { cloudConfig: cloudConfigString } = await res.json()
     const cloudConfig = JSON.parse(cloudConfigString)
@@ -20,12 +20,13 @@ export default class AttributesRepo implements IattributesRepo {
     return new CloudConfig(numBins, numElementsPerBin, finiteFieldNum, smallFiniteFieldNum, vectorX)
   }
 
-  public async resultsComputation(qMatrix: galois.Matrix, requesterID: string, requesteeID: string): Promise<void> {
+  public async resultsComputation (qMatrix: galois.Matrix, requesterID: string, requesteeID: string): Promise<void> {
     const stringified = JSON.stringify(qMatrix, (key, value) =>
       typeof value === 'bigint'
         ? value.toString()
         : value // return everything else unchanged
     )
+    console.log('Client B sends qMatrix to the cloud')
     await resultsComputationFetch(stringified, requesterID, requesteeID)
   }
 }

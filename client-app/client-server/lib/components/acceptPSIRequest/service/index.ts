@@ -17,16 +17,20 @@ export default class AcceptPSIRequestService {
 
   public async acceptPSIRequest ({ requesterID: string }: acceptPSIRequest): Promise<{ approved: boolean; password: string; }> {
     // Use requesterID to send notif to FE to seek approval and retrieve password
+    // Need a pub sub model here
     const approved = true
-    const password = 'password' // take in from FE
+    const password = '1234' // take in from FE
 
     return { approved, password }
   }
 
   public async computationDelegation ({ requesterID, mk, cloudConfig, field }: {requesterID: string, mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField}, dataAccess: IAttributesRepo): Promise<void> {
+    console.log('Client B begin computation delegation')
     const qMatrix = this.calculateQMatrix(mk, cloudConfig, field)
 
-    const requesteeID = 'requesteeID' // TODO: retrieve requesteeID
+    const requesteeID = 'B' // TODO: retrieve requesteeID from local DB
+    console.log('Client B generated qMatrix from master key')
+    // console.log('CLient B qMatrix:', qMatrix)
 
     await dataAccess.resultsComputation(qMatrix, requesterID, requesteeID)
   }
@@ -69,19 +73,20 @@ export default class AcceptPSIRequestService {
 
     const randomPolynomialAMatrix = field.newMatrixFrom(randomPolynomialA_PointValue)
     const hashField = galois.createPrimeField(cloudConfig.smallFiniteFieldNum)
-    AcceptPSIRequestService.generateBlindingVectors(mk, cloudConfig.numBins, cloudConfig.numElementsPerBin, hashField, blindingFactorsA)
-    const blindingFactorsAMatrix = field.newMatrixFrom(blindingFactorsA)
+
+    const blindingVectors = AcceptPSIRequestService.generateBlindingVectors(mk, cloudConfig.numBins, cloudConfig.numElementsPerBin, hashField, blindingFactorsA)
+    const blindingFactorsAMatrix = field.newMatrixFrom(blindingVectors)
+
     const qValuesAMatrix = field.mulMatrixElements(randomPolynomialAMatrix, blindingFactorsAMatrix)
 
     // console.log(' ------------------ Q Matrix (Client A) ------------------')
-    // console.log(qValuesAMatrix)
-    // console.log()
 
     return qValuesAMatrix
   }
 
   // Generates an array of blinding vectors
-  private static generateBlindingVectors (mk: string, numBins: number, numElementsPerBin: number, hashField: Igalois.FiniteField, blindingFactorsA: bigint[][]): void {
+  private static generateBlindingVectors (mk: string, numBins: number, numElementsPerBin: number, hashField: Igalois.FiniteField, blindingFactorsA: bigint[][]): bigint[][] {
+    const temp = [...blindingFactorsA]
     // Creating Blinding Factors
     for (let i = 0; i < numBins; i++) {
       const hashValueA = hashField.prng(BigInt(String(mk) + String(i * 20)))
@@ -94,8 +99,10 @@ export default class AcceptPSIRequestService {
           blindingFactorA = 1n
         }
 
-        blindingFactorsA[i].push(blindingFactorA)
+        temp[i].push(blindingFactorA)
       }
     }
+
+    return temp
   }
 }

@@ -14,32 +14,45 @@ const galois = require('@guildofweavers/galois')
 */
 
 router.post('/acceptPSIRequest', async (req, res) => {
+  console.log('Begin Client B Accept PSI', req.body)
   const requesterID = req.body.requesterID
+
   const attributeRepoInstance = new AttributesRepo()
   const acceptPSIRequestServiceInstance = Container.get(AcceptPSIRequestService)
 
+  /**
+   * Seek approval and authentication from the requestee
+   */
   const { approved, password } = await acceptPSIRequestServiceInstance.acceptPSIRequest({ requesterID })
 
   if (!approved) {
-    res.status(200).json({ status: 200, response: { success: false } })
+    res.status(200).json({ status: 200, response: { success: false, text: 'PSI has been rejected' } })
   }
 
   // 1) Get cloud config
   const cloudConfig = await acceptPSIRequestServiceInstance.getCloudAttributes(attributeRepoInstance)
   const field = galois.createPrimeField(cloudConfig.finiteFieldNum)
 
-  // 2) Generate mk from password
-  const mk = field.prng(password).toString()
+  // 2) Generate mk from password // TODO: This implementation is not done
+  // const mk = field.prng(password).toString() // Actual implementation
+  const mk = '1234'
 
-  // hash computed mk
-  // retrieve stored hashed mk
-  const hashedmk = 'hashedmk'
+  // TODO: Authenticate the the database
+  // // hash computed mk
+  // const hashedmk = '1234'
 
-  if (hashedmk !== mk) {
-    res.status(500).json({ error: { type: 'general', message: 'password incorrect' }, status: 500 })
-  }
+  // if (hashedmk !== mk) {
+  //   res.status(500).json({ error: { type: 'general', message: 'password incorrect' }, status: 500 })
+  // }
+  console.log('Client B password', password)
+  console.log('Client B master key', mk)
 
   if (typeof requesterID === 'string') {
+  /**
+   * Initiate the PSI with the cloud
+   */
+    console.log('Client B Accepted PSI request')
+
     acceptPSIRequestServiceInstance.computationDelegation({ requesterID, mk, cloudConfig, field }, attributeRepoInstance).then(() => {
       res.status(200).json({ status: 200, response: { success: true } })
     }).catch(err => {
