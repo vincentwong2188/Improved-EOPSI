@@ -7,7 +7,13 @@ const router = express.Router()
 // Called by the frontend
 router.post('/initPSI', async (req, res) => {
   const requesteeID = req.body.requesteeID
-  const requesteeIP = req.body.requesteeIP || 'http://client-server-b:5002' // Call the client B container for now
+  const requesteeIP = req.body.requesteeIP
+  if (!requesteeIP) {
+    res.status(433).json({ error: 'Please input requesteeIP' })
+  }
+  if (!requesteeID) {
+    res.status(433).json({ error: 'Please input requesteeID' })
+  }
 
   const initPSIServiceInstance = Container.get(InitPSIService)
   const configRepoInstance = new ConfigDA()

@@ -24,7 +24,6 @@ router.use('/resultsRetrieval', resultsRetrieval)
 router.use('/initPSI', initPSI)
 router.use('/acceptPSIRequest', acceptPSIRequest)
 
-
 /**
  * Authenticated routes
  */

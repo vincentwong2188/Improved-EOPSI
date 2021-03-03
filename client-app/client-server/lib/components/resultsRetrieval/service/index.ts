@@ -27,8 +27,6 @@ export default class ResultsRetrievalService {
     const localAttributes = localAttributesUnmarshalled.map(({ hashed_value, name, phone }) => {
       return new Attribute(name, phone, { hashedValue: hashed_value })
     })
-    // Verify if Master Key is the hashed master key saved in client DB
-    // TODO
 
     const hashField : Igalois.FiniteField = galois.createPrimeField(cloudConfig.smallFiniteFieldNum)
     const blindingFactorsA : Igalois.Matrix = ResultsRetrievalService.generateBlindingFactors(mk, cloudConfig.numBins, cloudConfig.numElementsPerBin, hashField)
@@ -68,9 +66,7 @@ export default class ResultsRetrievalService {
 
     try {
       const gMatrix = field.addMatrixElements(qPrime, field.mulMatrixElements(qPrimePrime, blindingFactors))
-      // console.log(gMatrix)
       const gValues = gMatrix.toValues()
-      console.log(gValues)
 
       const resultantPolynomial = []
 
@@ -79,7 +75,6 @@ export default class ResultsRetrievalService {
         const result = field.interpolate(field.newVectorFrom(cloudConfig.vectorX), polynomialYVector)
         resultantPolynomial.push(result)
       }
-      console.log(resultantPolynomial)
 
       return resultantPolynomial
     } catch (e) {

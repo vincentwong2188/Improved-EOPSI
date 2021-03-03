@@ -2,25 +2,47 @@ import { Service } from 'typedi'
 import Attribute from '../entities/attribute'
 import CloudConfig from '../entities/cloudConfig'
 import IAttributesRepo from '../../dataAccess/attributes/IAttributesRepo'
+import IconfigRepo from '../../dataAccess/config/IconfigRepo'
 import Igalois from '@guildofweavers/galois'
 import { concatenateAttribute } from '../../../common/util/concat'
+import { passwordToMk } from '../../../common/util/passwordUtil'
+
 const galois = require('@guildofweavers/galois')
 
 interface initClientRequest {
-  clientID: string;
+  url: string;
   attributes: Attribute[];
   mk: string;
   cloudConfig: CloudConfig
   field: Igalois.FiniteField
+  clientID: string
 }
 
 @Service()
 export default class InitClientService {
+  public async saveConfig ({ password, dataAccess, clientID, field }:{password: string, dataAccess: IconfigRepo, clientID: string, field: Igalois.FiniteField}):Promise<string> {
+    const mk = await this.parsePassword(password, dataAccess, field)
+    await this.saveClientID(clientID, dataAccess)
+    return mk
+  }
+
   public async getCloudAttributes (dataAccess: IAttributesRepo) : Promise<CloudConfig> {
+    console.log('Retreived cloud config')
     return dataAccess.getCloudConfig()
   }
 
-  public async initClient ({ clientID, attributes, mk, cloudConfig, field } : initClientRequest, dataAccess: IAttributesRepo) : Promise<{blindedVectors: Igalois.Matrix}> {
+  private async saveClientID (clientID: string, dataAccess:IconfigRepo) : Promise<void> {
+    await dataAccess.saveClientID(clientID)
+  }
+
+  private async parsePassword (password: string, dataAccess: IconfigRepo, field: Igalois.FiniteField) : Promise<string> {
+    const mk = passwordToMk(password, field)
+    console.log('Saving master key')
+    await dataAccess.saveMasterKey(mk)
+    return mk
+  }
+
+  public async initClient ({ attributes, mk, cloudConfig, field, url, clientID } : initClientRequest, dataAccess: IAttributesRepo) : Promise<{clientID: string}> {
     console.log('init client')
     // 1) Save attributes into local DB
     await dataAccess.saveAttributesLocal(attributes)
@@ -32,8 +54,9 @@ export default class InitClientService {
     // console.log('Blinded vectors:', blindedVectors)
 
     // 3) Send values to be stored in the cloud
-    await dataAccess.saveAttributesCloud(blindedVectors, clientID)
-    return { blindedVectors }
+    await dataAccess.saveAttributesCloud(blindedVectors, url, clientID)
+
+    return { clientID }
   }
 
   // Takes in array of hashed attributes and returns an array of point value forms
@@ -93,7 +116,6 @@ export default class InitClientService {
 
   // Generates an array of blinding vectors
   private static generateBlindingVectors (mk: string, numBins: number, numElementsPerBin: number, hashField: Igalois.FiniteField, blindingFactorsA: bigint[][]) : void {
-    console.log(BigInt(String(mk)))
     // Creating Blinding Factors
     for (let i = 0; i < numBins; i++) {
       const hashValueA = hashField.prng(BigInt(String(mk) + String(i * 20)))
@@ -109,7 +131,7 @@ export default class InitClientService {
         blindingFactorsA[i].push(blindingFactorA)
       }
     }
-    console.log(blindingFactorsA)
+    console.log('Generated Blinding factors')
   }
 
   // Blinds the point value pairs

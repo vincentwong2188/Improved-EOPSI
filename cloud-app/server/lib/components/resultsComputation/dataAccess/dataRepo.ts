@@ -5,6 +5,7 @@ import BlindedAttributes from '../entities/blindedAttributes'
 // Accesses data from local database or cloud service
 export default class DataRepo implements IdataRepo {
   public async getBlindedAttributes (clientID: string) : Promise<BlindedAttributes> {
+    console.log(clientID)
     const queryString = 'select blinded_vectors from cloud.clients where clientid = $1'
     const result = await query(queryString, [clientID])
     if (result.rows) {

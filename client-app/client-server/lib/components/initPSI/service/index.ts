@@ -13,13 +13,10 @@ interface initPSIRequest {
 @Service()
 export default class InitPSIService {
   public async initPSI ({ requesteeID, requesteeIP }: initPSIRequest, configRepo: IConfigRepo): Promise<void> {
-    console.log('PSI initiated with client B')
+    console.log(`PSI initiated with client: ${requesteeID} at ${requesteeIP}`)
 
     // Retrieve clientID from local DB
     const clientID = await configRepo.getClientID()
-
-    // const requesterIP = Object.values(networkInterfaces()).flat().find(i => i.family == 'IPv4' && !i.internal).address;
-
-    await fetch(requesteeIP + acceptPSIRequestEndpoint, { method: 'POST', body: JSON.stringify({ requesterID: clientID }), headers: { 'Content-Type': 'application/json' } })
+    await fetch(requesteeIP + acceptPSIRequestEndpoint, { method: 'POST', body: JSON.stringify({ requesterID: clientID, requesteeID }), headers: { 'Content-Type': 'application/json' } })
   }
 }

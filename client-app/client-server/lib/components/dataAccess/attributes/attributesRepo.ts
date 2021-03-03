@@ -41,12 +41,13 @@ export default class AttributesRepo implements IattributesRepo {
       return new CloudConfig(numBins, numElementsPerBin, finiteFieldNum, smallFiniteFieldNum, vectorX)
     }
 
-    public async saveAttributesCloud (blindedVectors: galois.Matrix, clientID: string) : Promise<void> {
+    public async saveAttributesCloud (blindedVectors: galois.Matrix, url: string, clientID: string) : Promise<string> {
       const stringified = JSON.stringify(blindedVectors, (key, value) =>
         typeof value === 'bigint'
           ? value.toString()
           : value // return everything else unchanged
       )
-      await initClientFetch(stringified, clientID)
+      await initClientFetch(stringified, url, clientID)
+      return ''
     }
 }

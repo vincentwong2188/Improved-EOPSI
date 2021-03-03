@@ -9,7 +9,7 @@ import galois from '@guildofweavers/galois'
 export default interface IattributesRepo {
     saveAttributesLocal : (attributes: Attribute[]) => void;
     getCloudConfig : () => Promise<CloudConfig>
-    saveAttributesCloud : (attributes: galois.Matrix, clientID: string) => Promise<void>
+    saveAttributesCloud : (attributes: galois.Matrix, url: string, clientID: string) => Promise<string>
     getLocalAttributes: () => Promise<{hashed_value: string, name: string, phone: number}[]>
 
 }

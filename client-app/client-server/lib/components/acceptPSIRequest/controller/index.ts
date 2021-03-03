@@ -2,6 +2,7 @@ import express from 'express'
 import { Container } from 'typedi'
 import AcceptPSIRequestService from '../service'
 import AttributesRepo from '../dataAccess/attributesRepo'
+import ConfigRepo from '../../dataAccess/config/configRepo'
 const router = express.Router()
 const galois = require('@guildofweavers/galois')
 
@@ -19,11 +20,12 @@ router.post('/acceptPSIRequest', async (req, res) => {
 
   const attributeRepoInstance = new AttributesRepo()
   const acceptPSIRequestServiceInstance = Container.get(AcceptPSIRequestService)
+  const configRepoInstance = new ConfigRepo()
 
   /**
    * Seek approval and authentication from the requestee
    */
-  const { approved, password } = await acceptPSIRequestServiceInstance.acceptPSIRequest({ requesterID })
+  const { approved } = await acceptPSIRequestServiceInstance.acceptPSIRequest({ requesterID })
 
   if (!approved) {
     res.status(200).json({ status: 200, response: { success: false, text: 'PSI has been rejected' } })
@@ -33,19 +35,9 @@ router.post('/acceptPSIRequest', async (req, res) => {
   const cloudConfig = await acceptPSIRequestServiceInstance.getCloudAttributes(attributeRepoInstance)
   const field = galois.createPrimeField(cloudConfig.finiteFieldNum)
 
-  // 2) Generate mk from password // TODO: This implementation is not done
-  // const mk = field.prng(password).toString() // Actual implementation
-  const mk = '1234'
-
-  // TODO: Authenticate the the database
-  // // hash computed mk
-  // const hashedmk = '1234'
-
-  // if (hashedmk !== mk) {
-  //   res.status(500).json({ error: { type: 'general', message: 'password incorrect' }, status: 500 })
-  // }
-  console.log('Client B password', password)
-  console.log('Client B master key', mk)
+  // 2) Get local attributes
+  const mk = await configRepoInstance.getMasterKey()
+  const clientID = await configRepoInstance.getClientID()
 
   if (typeof requesterID === 'string') {
   /**
@@ -53,7 +45,7 @@ router.post('/acceptPSIRequest', async (req, res) => {
    */
     console.log('Client B Accepted PSI request')
 
-    acceptPSIRequestServiceInstance.computationDelegation({ requesterID, mk, cloudConfig, field }, attributeRepoInstance).then(() => {
+    acceptPSIRequestServiceInstance.computationDelegation({ requesterID, mk, cloudConfig, field, clientID }, attributeRepoInstance).then(() => {
       res.status(200).json({ status: 200, response: { success: true } })
     }).catch(err => {
       res.status(500).json({ error: { type: 'general', message: err.message }, status: 500 })

@@ -4,7 +4,7 @@ import api from './lib/components'
 // Initialise express
 const app = express()
 // Config
-const PORT = 5002
+const PORT = process.env.PORT || 5000
 
 // For all API calls
 app.use('/api', api)

@@ -1,50 +1,46 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import { Container } from 'typedi'
+import ConfigRepo from '../../dataAccess/config/configRepo'
 import InitClientService from '../../initClient/service'
 import ResultsRetrievalService from '../service'
-import { getHash } from '../../../common/util/hashAttributes'
-import Attribute from '../entities/attribute'
 import AttributesRepo from '../../dataAccess/attributes/attributesRepo'
+import { unmarshallGaloisMatrix } from '../../../common/util/marshallMatrix'
+
 const router = express.Router()
 const galois = require('@guildofweavers/galois')
 
 /*
+  This method is called by the cloud
+
   request body:
-  - Array of attribute objects: (Converted into a hashed value at the service layer)
-    - name
-    - phone number
   - password : string
   - qPrime : Igalois.Matrix
   - qPrimePrime : Igalois.Matrix
 
 */
 
-router.post('/resultsRetrieval', async (req, res) => {
-  const attributesRequest = req.body.attributes
-  const password = BigInt(req.body.password)
-  const qPrime = req.body.qPrime
-  const qPrimePrime = req.body.qPrimePrime
+router.post('/resultsRetrieval', async (req: Request, res: Response) => {
+  console.log('Begin results retrieval')
+
+  const qPrime = unmarshallGaloisMatrix(req.body.qPrime)
+  const qPrimePrime = unmarshallGaloisMatrix(req.body.qPrimePrime)
   // const clientID = req.body.clientID
 
   const attributeRepoInstance = new AttributesRepo()
   const initClientServiceInstance = Container.get(InitClientService)
   const resultsRetrievalServiceInstance = Container.get(ResultsRetrievalService)
+  const configRepoInstance = new ConfigRepo()
 
   // Get cloud config
   const cloudConfig = await initClientServiceInstance.getCloudAttributes(attributeRepoInstance)
-  console.log('Retreived cloud config')
+
   const field = galois.createPrimeField(cloudConfig.finiteFieldNum)
 
-  // Generate mk from password
-  const mk = field.prng(password).toString()
-
-  // Create attributes entity
-  const attributes = attributesRequest.map(({ name, number }: { name: string, number: string }) => {
-    return new Attribute(name, parseInt(number), field, getHash)
-  })
+  // Retreive master key from database
+  const mk = await configRepoInstance.getMasterKey()
 
   // Call Results Retrieval Service
-  resultsRetrievalServiceInstance.resultsRetrieval({ attributes, qPrime, qPrimePrime, mk, cloudConfig, field }, attributeRepoInstance).then((commonAttributes: String[]) => {
+  resultsRetrievalServiceInstance.resultsRetrieval({ qPrime, qPrimePrime, mk, cloudConfig, field }, attributeRepoInstance).then((commonAttributes: String[]) => {
     const stringified = JSON.stringify(commonAttributes, (key, value) =>
       typeof value === 'bigint'
         ? value.toString()

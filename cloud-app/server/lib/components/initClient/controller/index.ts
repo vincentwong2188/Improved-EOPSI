@@ -5,17 +5,18 @@ import AttributesRepo from '../dataAccess/attributesRepo'
 const router = express.Router()
 
 // Called by the client:
-// Gets a client ID and a list of attributes in the request body
+// returns a clientID
 // Ideally, we should be using a jwt token here for authentication
 router.post('/initClient', async (req, res) => {
   const initClientServiceInstance = Container.get(InitClientService)
   const attributeRepoInstance = new AttributesRepo()
   const blindedVectors = req.body.blindedVectors
+  const url = req.body.url
   const clientID = req.body.clientID
 
   //  Call initClient
-  initClientServiceInstance.initClient({ blindedVectors, clientID }, attributeRepoInstance).then(() => {
-    res.status(200).json({ status: 200, response: { success: true } })
+  initClientServiceInstance.initClient({ blindedVectors, url, clientID }, attributeRepoInstance).then((clientID) => {
+    res.status(200).json({ status: 200, clientID, response: { success: true } })
   }).catch(err => {
     res.status(500).json({ error: { type: 'general', message: err.message }, status: 500 })
   })

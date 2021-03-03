@@ -1,5 +1,6 @@
 import { Service } from 'typedi'
-import { networkInterfaces } from 'os'
+import IConfigRepo from '../../configDA/dataAccess/IConfigRepo'
+// import { networkInterfaces } from 'os'
 
 const fetch = require('node-fetch')
 const acceptPSIRequestEndpoint = '/api/acceptPSIRequest/acceptPSIRequest'
@@ -11,10 +12,11 @@ interface initPSIRequest {
 
 @Service()
 export default class InitPSIService {
-  public async initPSI({ requesteeID, requesteeIP }: initPSIRequest): Promise<void> {
-    const requesterID = 'clientA'; //retrieve from local db?
-    // const requesterIP = Object.values(networkInterfaces()).flat().find(i => i.family == 'IPv4' && !i.internal).address;
+  public async initPSI ({ requesteeID, requesteeIP }: initPSIRequest, configRepo: IConfigRepo): Promise<void> {
+    console.log(`PSI initiated with client: ${requesteeID} at ${requesteeIP}`)
 
-    await fetch(requesteeIP + acceptPSIRequestEndpoint, { method: 'POST', body: JSON.stringify({ requesterID }), headers: { 'Content-Type': 'application/json' } })
+    // Retrieve clientID from local DB
+    const clientID = await configRepo.getClientID()
+    await fetch(requesteeIP + acceptPSIRequestEndpoint, { method: 'POST', body: JSON.stringify({ requesterID: clientID, requesteeID }), headers: { 'Content-Type': 'application/json' } })
   }
 }

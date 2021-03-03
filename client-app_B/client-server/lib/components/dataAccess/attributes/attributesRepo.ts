@@ -19,7 +19,7 @@ export default class AttributesRepo implements IattributesRepo {
 
     public saveAttributesLocal = async (attributes: Attribute[]) => {
       try {
-        const queryString = `insert into client.attributes (hashed_value, name, phone) values ${attributes.map((attr) => `(${attr.getHashedValue()}, '${attr.name}', ${attr.number})`).join(',')} on conflict do nothing`
+        const queryString = `insert into client.attributes (hashed_value, name, phone) values ${attributes.map((attr) => `(${attr.getHashedValue()}, '${attr.name}', ${attr.number})`).join(',')} on conflict(name, phone) do nothing`
         await query(queryString)
       } catch (e) {
         throw new DatabaseError(e.message)
@@ -41,12 +41,13 @@ export default class AttributesRepo implements IattributesRepo {
       return new CloudConfig(numBins, numElementsPerBin, finiteFieldNum, smallFiniteFieldNum, vectorX)
     }
 
-    public async saveAttributesCloud (blindedVectors: galois.Matrix, clientID: string) : Promise<void> {
+    public async saveAttributesCloud (blindedVectors: galois.Matrix, url: string, clientID: string) : Promise<string> {
       const stringified = JSON.stringify(blindedVectors, (key, value) =>
         typeof value === 'bigint'
           ? value.toString()
           : value // return everything else unchanged
       )
-      await initClientFetch(stringified, clientID)
+      await initClientFetch(stringified, url, clientID)
+      return ''
     }
 }

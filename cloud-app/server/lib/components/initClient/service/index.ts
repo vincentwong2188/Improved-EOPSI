@@ -2,8 +2,9 @@ import { Service } from 'typedi'
 import IAttributesRepo from '../dataAccess/IAttributesRepo'
 
 interface initClientRequest {
-  clientID: string;
+  url: string;
   blindedVectors: string;
+  clientID: string;
 }
 interface cloudConfigResponse {
   numBins: number;
@@ -16,10 +17,13 @@ interface cloudConfigResponse {
 
 @Service()
 export default class InitClientService {
-  public async initClient ({ blindedVectors, clientID } : initClientRequest, dataAccess: IAttributesRepo) : Promise<void> {
+  // clientID might not be unique
+  public async initClient ({ blindedVectors, url, clientID } : initClientRequest, dataAccess: IAttributesRepo) : Promise<string> {
     // 1) Save attributes into cloud DB
-    await dataAccess.saveAttributesLocal(clientID, blindedVectors)
+    await dataAccess.saveAttributesLocal(clientID, url, blindedVectors)
+
     console.log('Saved Cloud Attributes')
+    return clientID
   }
 
   // Get cloud config

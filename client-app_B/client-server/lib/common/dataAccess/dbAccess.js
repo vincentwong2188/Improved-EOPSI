@@ -12,7 +12,7 @@ const pool = new Pool({
   database,
   host,
   port
-}) 
+})
 
 export const query = (text, params, callback) => {
   return pool.query(text, params, callback)

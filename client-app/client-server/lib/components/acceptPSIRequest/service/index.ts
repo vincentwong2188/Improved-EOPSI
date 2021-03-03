@@ -24,13 +24,13 @@ export default class AcceptPSIRequestService {
     return { approved, password }
   }
 
-  public async computationDelegation ({ requesterID, mk, cloudConfig, field }: {requesterID: string, mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField}, dataAccess: IAttributesRepo): Promise<void> {
-    console.log('Client B begin computation delegation')
+  public async computationDelegation ({ requesterID, mk, cloudConfig, field, clientID }: {requesterID: string, mk: string, cloudConfig: CloudConfig, field: Igalois.FiniteField, clientID: string }, dataAccess: IAttributesRepo): Promise<void> {
+    console.log('Client B begin computation delegation', mk)
     const qMatrix = this.calculateQMatrix(mk, cloudConfig, field)
 
-    const requesteeID = 'B' // TODO: retrieve requesteeID from local DB
+    const requesteeID = clientID
+
     console.log('Client B generated qMatrix from master key')
-    // console.log('CLient B qMatrix:', qMatrix)
 
     await dataAccess.resultsComputation(qMatrix, requesterID, requesteeID)
   }
