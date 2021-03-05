@@ -8,7 +8,7 @@
             "name": "rcp-eopsi",
             "portMappings": [
                 {
-                    "containerPort": 5000,
+                    "containerPort": 5001,
                     "hostPort": 80
                 }
             ]

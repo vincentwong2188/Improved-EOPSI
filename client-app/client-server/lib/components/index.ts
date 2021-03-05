@@ -12,7 +12,7 @@ const router = express.Router()
 
 // middlewares
 router.use(logger)
-router.use(express.json()) // Converts client requests to JSON
+router.use(express.json({ limit: '50mb' })) // Converts client requests to JSON
 router.use(corsImpl) // cors settings
 
 /**

@@ -44,6 +44,8 @@ export default class InitClientService {
 
   public async initClient ({ attributes, mk, cloudConfig, field, url, clientID } : initClientRequest, dataAccess: IAttributesRepo) : Promise<{clientID: string}> {
     console.log('init client')
+    console.log('Cloud config num bins:', cloudConfig.numBins)
+
     // 1) Save attributes into local DB
     await dataAccess.saveAttributesLocal(attributes)
     console.log('Saved data to local DB')

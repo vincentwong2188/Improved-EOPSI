@@ -19,7 +19,9 @@ export default class AttributesRepo implements IattributesRepo {
 
     public saveAttributesLocal = async (attributes: Attribute[]) => {
       try {
+        const queryDelete = 'delete from client.attributes'
         const queryString = `insert into client.attributes (hashed_value, name, phone) values ${attributes.map((attr) => `(${attr.getHashedValue()}, '${attr.name}', ${attr.number})`).join(',')} on conflict do nothing`
+        await query(queryDelete)
         await query(queryString)
       } catch (e) {
         throw new DatabaseError(e.message)

@@ -9,7 +9,7 @@ const PORT = 5001
 // For all API calls
 app.use('/api', api)
 app.get('/', (req, res) => {
-  res.send('Client endpoint reached')
+  res.send('Cloud endpoint reached')
 })
 
 // Starting the server

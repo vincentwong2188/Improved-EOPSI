@@ -35,6 +35,8 @@ interface retrieveAttributesResponse {
 @Service()
 export default class ResultsComputationService {
   public async resultsComputation ({ qMatrix, requesterID, requesteeID, requesterBlindedMatrix, requesteeBlindedMatrix, cloudConfig, field }: resultsComputationRequest, dataAccess: IDataRepo): Promise<resultsComputationResponse> {
+    console.log('Cloud config num bins:', cloudConfig.numBins)
+
     const tkB = 987n
 
     const randomPolynomialB: bigint[][] = []

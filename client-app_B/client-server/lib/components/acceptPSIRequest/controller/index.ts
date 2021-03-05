@@ -34,7 +34,7 @@ router.post('/acceptPSIRequest', async (req, res) => {
   // 1) Get cloud config
   const cloudConfig = await acceptPSIRequestServiceInstance.getCloudAttributes(attributeRepoInstance)
   const field = galois.createPrimeField(cloudConfig.finiteFieldNum)
-
+  console.log('Retrieved cloud config. Num bins:', cloudConfig.numBins)
   // 2) Get local attributes
   const mk = await configRepoInstance.getMasterKey()
   const clientID = await configRepoInstance.getClientID()

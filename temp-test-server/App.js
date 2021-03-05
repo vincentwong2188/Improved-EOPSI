@@ -1,12 +1,40 @@
 const galois = require("@guildofweavers/galois");
 const {concatenateAttribute, checkHashValue} = require("./util");
-// Constants
 
+
+const randomNameGenerator = num => {
+    let res = '';
+    for(let i = 0; i < num; i++){
+       const random = Math.floor(Math.random() * 27);
+       res += String.fromCharCode(97 + random);
+    };
+    return res;
+ };
+
+const generateTestData = (testSize) => {
+    const intersectionSet = [
+        { name: 'alice', number: '91053280' },
+        { name: 'bob', number: '98775251' },
+        { name: 'charlie', number: '91524110' },
+    ]
+    const testData = [...intersectionSet]
+    for(let i=0; i< testSize ; i++){
+        const name = randomNameGenerator(8) 
+        const number = '9' + Math.floor(Math.random() * 10000000).toString()
+        testData.push({name, number})
+    }
+    return testData;
+}
+
+console.log(generateTestData(1))
+
+
+// Constants
 const LARGE_PRIME_NUMBER = 2n ** 256n - 351n * 2n ** 32n + 1n
-const SMALL_PRIME_NUMBER = 1931n
+// const SMALL_PRIME_NUMBER = 1931n
+const SMALL_PRIME_NUMBER = 1979n
 // const SMALL_PRIME_NUMBER = 351n * 2n ** 32n + 1n
 const SMALLER_PRIME_NUMBER = 97n
-
 // const LARGE_PRIME_NUMBER = 99999989n
 // const SMALL_PRIME_NUMBER = 1931n
 console.time('Full Protocol Time')
@@ -15,7 +43,7 @@ const field = galois.createPrimeField(LARGE_PRIME_NUMBER);
 const smallField = galois.createPrimeField(SMALL_PRIME_NUMBER);
 const smallerField = galois.createPrimeField(SMALLER_PRIME_NUMBER);
 
-const NUMBER_OF_BINS = 5;
+const NUMBER_OF_BINS = 6;
 const MAXIMUM_LOAD = 5;
 const MASTER_KEY_CLIENTA = 1234n; //master key set to simulate the implemented protocol 
 const MASTER_KEY_CLIENTB = 1234n; // master key set to simulate the implemented protocol

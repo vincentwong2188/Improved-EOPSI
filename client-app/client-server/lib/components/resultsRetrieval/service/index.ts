@@ -19,6 +19,8 @@ interface resultsRetrievalRequest {
 @Service()
 export default class ResultsRetrievalService {
   public async resultsRetrieval ({ qPrime, qPrimePrime, mk, cloudConfig, field }: resultsRetrievalRequest, dataAccess : IAttributesRepo) : Promise<String[]> {
+    console.log('Cloud config num bins:', cloudConfig.numBins)
+
     const appStateInstance = Container.get(AppState)
     // Convert qprime and qprimeprime to galois matrix
     const _qPrime = field.newMatrixFrom(qPrime)
@@ -125,6 +127,8 @@ export default class ResultsRetrievalService {
 
     const realAnswerArray : bigint[] = []
 
+    console.log(answerArray)
+
     answerArray.forEach(bin => {
       if (bin.length !== 0) {
         bin.forEach(answer => {
@@ -140,7 +144,7 @@ export default class ResultsRetrievalService {
 
     attributes.forEach(attribute => {
       if (realAnswerArray.includes(attribute.getHashedValue())) {
-        commonAttributesNames.push(attribute.name)
+        commonAttributesNames.push(attribute.name + '-' + attribute.number)
       }
     })
 

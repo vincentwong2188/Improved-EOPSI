@@ -3,6 +3,7 @@ import { Container } from 'typedi'
 import InitClientService from '../service'
 import ConfigRepo from '../../dataAccess/config/configRepo'
 import { getHash } from '../../../common/util/hashAttributes'
+import { generateTestData } from '../../../common/util/randomDataGenerator'
 import Attribute from '../entities/attribute'
 import AttributesRepo from '../../dataAccess/attributes/attributesRepo'
 import { DatabaseError } from '../../../common/Error'
@@ -18,8 +19,8 @@ const galois = require('@guildofweavers/galois')
 */
 
 router.post('/initClient', async (req, res) => {
-  const attributesRequest = req.body.attributes
-  // const clientID = req.body.clientID // Client should be sending to the BE an autorization token or it will be possible to fake identity
+  const testSize = req.body.testSize
+  const attributesRequest = testSize ? generateTestData(testSize - 3) : req.body.attributes // generate the test data according to the number of attributes the user wants to compute the intersection for
   const password = req.body.password
   const url = req.body.url // url taken from local tunnel
   const clientID = req.body.clientID // clientID assumed to be unique

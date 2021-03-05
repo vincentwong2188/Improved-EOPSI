@@ -1,5 +1,6 @@
 import IattributesRepo from './IAttributesRepo'
 import CloudConfig from '../entities/cloudConfig'
+import CLOUD_CONFIG from '../../CLOUD_CONFIG' // Cloud config
 import { query } from '../../../common/dataAccess/dbAccess'
 
 // Accesses data from local database or cloud service
@@ -20,13 +21,11 @@ export default class AttributesRepo implements IattributesRepo {
     }
 
     public async getCloudConfig () : Promise<CloudConfig> {
-      // Cloud config hardcoded in memory
-      const NUMBER_OF_BINS = 5
-      const MAXIMUM_LOAD = 5
-      const finiteFieldNum = 2n ** 256n - 351n * 2n ** 32n + 1n
-      const smallFiniteFieldNum = 1931n
-      const vectorX = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n, 11n]
-
+      const { NUMBER_OF_BINS, MAXIMUM_LOAD, finiteFieldNum, smallFiniteFieldNum } = CLOUD_CONFIG
+      const vectorX = []
+      for (let i = 1; i <= 2 * MAXIMUM_LOAD + 1; i++) {
+        vectorX.push(BigInt(i))
+      }
       return new CloudConfig(NUMBER_OF_BINS, MAXIMUM_LOAD, finiteFieldNum, smallFiniteFieldNum, vectorX)
     }
 }
