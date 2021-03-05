@@ -19,8 +19,8 @@ router.post('/initPSI', async (req, res) => {
   const configRepoInstance = new ConfigDA()
 
   // TODO: A global variable should be set here to indicate that the PSI is computing
-  initPSIServiceInstance.initPSI({ requesteeID, requesteeIP }, configRepoInstance).then(() => {
-    res.status(200).json({ status: 200, response: { success: true, message: 'PSI Initiated' } })
+  initPSIServiceInstance.initPSI({ requesteeID, requesteeIP }, configRepoInstance).then((intersectionResult?: String[]) => {
+    res.status(200).json({ status: 200, response: { success: true, intersectionResult } })
   }).catch(err => {
     res.status(500).json({ error: { type: 'general', message: err.message }, status: 500 })
   })

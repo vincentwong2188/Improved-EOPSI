@@ -38,6 +38,8 @@ router.post('/resultsComputation', async (req, res) => {
   // Result computation occurs
   const computedResults = await resultsComputationServiceInstance.resultsComputation({ qMatrix, requesterID, requesteeID, requesterBlindedMatrix, requesteeBlindedMatrix, cloudConfig, field }, dataRepoInstance)
 
+  console.log('REQUESTER ID: ', requesterID)
+
   const requesterIP = await getIPAddressServiceInstance.getIPAddress({ clientIDReq: requesterID }, ipRepoInstance)
 
   resultsComputationServiceInstance.sendComputedResults(computedResults, requesterIP.ipAddress).then(() => {

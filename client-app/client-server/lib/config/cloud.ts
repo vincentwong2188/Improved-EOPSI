@@ -1,1 +1,1 @@
-export const cloudOrigin = 'https://fat-cat-99.loca.lt'
+export const cloudOrigin = 'https://popular-moose-69.loca.lt'

@@ -1,10 +1,11 @@
 /* eslint-disable camelcase */
-import { Service } from 'typedi'
+import { Service, Container } from 'typedi'
 import Attribute from '../../entities/attribute'
 import CloudConfig from '../../entities/cloudConfig'
 import IAttributesRepo from '../../dataAccess/attributes/IAttributesRepo'
 import Igalois from '@guildofweavers/galois'
 import { checkHashValue, concatenateAttribute } from '../../../common/util/concat'
+import AppState from '../../../AppState'
 const galois = require('@guildofweavers/galois')
 
 interface resultsRetrievalRequest {
@@ -18,6 +19,7 @@ interface resultsRetrievalRequest {
 @Service()
 export default class ResultsRetrievalService {
   public async resultsRetrieval ({ qPrime, qPrimePrime, mk, cloudConfig, field }: resultsRetrievalRequest, dataAccess : IAttributesRepo) : Promise<String[]> {
+    const appStateInstance = Container.get(AppState)
     // Convert qprime and qprimeprime to galois matrix
     const _qPrime = field.newMatrixFrom(qPrime)
     const _qPrimePrime = field.newMatrixFrom(qPrimePrime)
@@ -36,6 +38,8 @@ export default class ResultsRetrievalService {
     const intersectionResult = ResultsRetrievalService.factorisePolynomial(resultPolynomial, localAttributes, cloudConfig, field, hashField)
 
     console.log('Final Intersection:', intersectionResult)
+    appStateInstance.setPendingRequest(false)
+    appStateInstance.setIntersectionResult(intersectionResult)
     return intersectionResult
   }
 

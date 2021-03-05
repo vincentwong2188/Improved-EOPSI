@@ -70,7 +70,7 @@ export default class ResultsComputationService {
   public async sendComputedResults ({ requesterID, requesteeID, qPrime, qPrimePrime }: resultsComputationResponse, requesterIP: string): Promise<void> {
     const marshalledResults = { requesterID, requesteeID, qPrime: marshallGaloisMatrix(qPrime), qPrimePrime: marshallGaloisMatrix(qPrimePrime) }
 
-    console.log('sending computed results')
+    console.log(`sending computed results to ${requesterIP + RESULTS_RETRIEVAL_ENDPOINT}`)
     await fetch(requesterIP + RESULTS_RETRIEVAL_ENDPOINT, { method: 'POST', body: JSON.stringify(marshalledResults), headers: { 'Content-Type': 'application/json' } })
   }
 
