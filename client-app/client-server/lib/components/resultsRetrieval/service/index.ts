@@ -101,8 +101,9 @@ export default class ResultsRetrievalService {
     // Rebuilding attributes and placing them into bins in preparation for factorisation
     const hashedAttributes = attributes.map((att) => (att.getHashedValue()))
     hashedAttributes.forEach(attribute => {
-      const binValue = Number(attribute) % cloudConfig.numBins
-      hashTableClient[binValue].push(concatenateAttribute(attribute, hashField, cloudConfig.smallFiniteFieldNum))
+      const concatAttr = concatenateAttribute(attribute, hashField, cloudConfig.smallFiniteFieldNum)
+      const binValue = Number(concatAttr) % cloudConfig.numBins
+      hashTableClient[binValue].push(concatAttr)
     })
 
     // Factorisation Begins here
