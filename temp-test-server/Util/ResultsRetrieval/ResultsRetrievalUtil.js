@@ -1,4 +1,4 @@
-const {checkHashValue} = require("../../util");
+const AttributeUtil = require("../AttributeUtil");
 const GaloisUtil = require('../GaloisUtil')
 const HashTableUtil = require('../HashTableUtil')
 
@@ -55,7 +55,7 @@ class ResultsRetrievalUtil {
             answerArray.forEach(bin => {
                 if (bin.length !== 0) {
                     bin.forEach(answer => {
-                        const {realValue, value } = checkHashValue(answer,smallField,smallPrimeNum)
+                        const {realValue, value } = AttributeUtil.checkHashValue(answer,smallField,smallPrimeNum)
                         if(realValue){
                             realAnswerArray.push(value)
                         }

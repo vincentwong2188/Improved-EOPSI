@@ -1,5 +1,5 @@
-const {concatenateAttribute } = require("../util");
-
+const AttributeUtil = require("./AttributeUtil");
+ 
 class HashTableUtil {
     // Get the hashTable with the padded values given the attributes
     static initializeHashTable = (numBins) => {
@@ -13,7 +13,7 @@ class HashTableUtil {
    static getHashTableFromAttributes = (attributes, numBins, maximumLoad, smallField, smallPrimeNumber) => {
        const concatenateAttributes = (attributes,smallField,smallPrimeNumber) => {
            const concatenatedAttributes = attributes.map(attribute => {
-               return concatenateAttribute(attribute,smallField,smallPrimeNumber)
+               return AttributeUtil.concatenateAttribute(attribute,smallField,smallPrimeNumber)
             })
            return concatenatedAttributes
        }
