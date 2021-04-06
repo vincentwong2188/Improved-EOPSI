@@ -1,400 +1,268 @@
-const galois = require("@guildofweavers/galois");
-const {concatenateAttribute, checkHashValue} = require("./util");
+const TestDataUtil = require('./Util/TestDataUtil')
+const HashUtil = require('./Util/HashUtil')
+const ComputationDelegationUtil = require('./Util/ComputationDelegation.js/ComputationDelegationUtil')
+const ResultsComputationUtil = require('./Util/ResultsComputation/ResultsComputationUtil')
+const ResultsRetrievalUtil = require('./Util/ResultsRetrieval/ResultsRetrievalUtil')
+const GaloisUtil = require('./Util/GaloisUtil')
+const InitClientUtil = require('./Util/InitClient/InitClientUtil')
 
+class Cloud {
+    cloudDB; 
 
-const randomNameGenerator = num => {
-    let res = '';
-    for(let i = 0; i < num; i++){
-       const random = Math.floor(Math.random() * 27);
-       res += String.fromCharCode(97 + random);
-    };
-    return res;
- };
-
-const generateTestData = (testSize) => {
-    const intersectionSet = [
-        { name: 'alice', number: '91053280' },
-        { name: 'bob', number: '98775251' },
-        { name: 'charlie', number: '91524110' },
-    ]
-    const testData = [...intersectionSet]
-    for(let i=0; i< testSize ; i++){
-        const name = randomNameGenerator(8) 
-        const number = '9' + Math.floor(Math.random() * 10000000).toString()
-        testData.push({name, number})
+    constructor(cloudDB) {
+        this.cloudDB = cloudDB
     }
-    return testData;
-}
-
-console.log(generateTestData(1))
-
-
-// Constants
-const LARGE_PRIME_NUMBER = 2n ** 256n - 351n * 2n ** 32n + 1n
-// const SMALL_PRIME_NUMBER = 1931n
-const SMALL_PRIME_NUMBER = 1979n
-// const SMALL_PRIME_NUMBER = 351n * 2n ** 32n + 1n
-const SMALLER_PRIME_NUMBER = 97n
-// const LARGE_PRIME_NUMBER = 99999989n
-// const SMALL_PRIME_NUMBER = 1931n
-console.time('Full Protocol Time')
-
-const field = galois.createPrimeField(LARGE_PRIME_NUMBER);
-const smallField = galois.createPrimeField(SMALL_PRIME_NUMBER);
-const smallerField = galois.createPrimeField(SMALLER_PRIME_NUMBER);
-
-const NUMBER_OF_BINS = 6;
-const MAXIMUM_LOAD = 5;
-const MASTER_KEY_CLIENTA = 1234n; //master key set to simulate the implemented protocol 
-const MASTER_KEY_CLIENTB = 1234n; // master key set to simulate the implemented protocol
-
-const ATTRIBUTE_COUNT = 1011
-
-const clientAAttributes = [145n,1428n]
-const clientBAttributes = [110n,1428n]
-const vectorX = []
-
-// Commented out to simulate the implemented protocol
-// for (let i = 0; i < ATTRIBUTE_COUNT; i++){
-//     // const attributeA = smallerField.rand()
-//     // const attributeB = smallerField.rand()
-
-//     clientAAttributes.push(BigInt(i))
-//     clientBAttributes.push(BigInt(i+1000))
-
-//     // clientAAttributes.push(attributeA)
-//     // clientBAttributes.push(attributeB)
-// }
-
-for (let i = 1; i<= 2* MAXIMUM_LOAD + 1; i++){
-    vectorX.push(BigInt(i))
-}
-
-// console.log('Client A Attributes: ' + clientAAttributes)
-// console.log('Client B Attributes: ' + clientBAttributes)
-// console.log('Vector X: ' + vectorX)
-
-// const clientAAttributes = [31n, 49n, 23n, 72n, 28n, 92n, 12n, 2n]
-// const clientBAttributes = [23n, 49n, 25n, 31n, 72n, 22n, 50n, 2n]
-
-// const vectorX = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n, 11n, 12n, 13n, 14n, 15n]
-
-const hashTableClientA = []
-const hashTableClientB = []
-const hashTablePointValueA = []
-const hashTablePointValueB = []
-const blindingFactorsA = []
-const blindingFactorsB = []
-const blindedValuesA = []
-const blindedValuesB = []
-const randomPolynomialA = []
-const randomPolynomialB = []
-
-for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    hashTableClientA[i] = []
-    hashTableClientB[i] = []
-    hashTablePointValueA[i] = []
-    hashTablePointValueB[i] = []
-    blindingFactorsA[i] = []
-    blindingFactorsB[i] = []
-    blindedValuesA[i] = []
-    blindedValuesB[i] = []
-    randomPolynomialA[i] = []
-    randomPolynomialB[i] = []
-}
-
-
-
-
-
-
-// Concatenating the Attribute values with its hash -> attribute||00||hash(attribute)
-const clientAConcateAttributes = clientAAttributes.map(attribute => {
-   return concatenateAttribute(attribute,smallField,SMALL_PRIME_NUMBER)
-})
-
-const clientBConcateAttributes = clientBAttributes.map(attribute => {
-    return concatenateAttribute(attribute,smallField,SMALL_PRIME_NUMBER)
-})
-
-// Hashing the attributes into bins
-clientAConcateAttributes.forEach(attribute => {
-    const binValue = Number(attribute) % NUMBER_OF_BINS
-    hashTableClientA[binValue].push(attribute)
-})
-
-clientBConcateAttributes.forEach(attribute => {
-    const binValue = Number(attribute) % NUMBER_OF_BINS
-    hashTableClientB[binValue].push(attribute)
-})
-
-
-// Padding the bins up to MAXIMUM_LOAD value
-for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    const valuesInBinA = hashTableClientA[i].length
-    for (let j = 0; j < MAXIMUM_LOAD - valuesInBinA; j++) {
-        // hashTableClientA[i].push(field.rand())
-        hashTableClientA[i].push(0n) // For testing purposes
-
-
-    }
-
-    const valuesInBinB = hashTableClientB[i].length
-    for (let j = 0; j < MAXIMUM_LOAD - valuesInBinB; j++) {
-        // hashTableClientB[i].push(field.rand())
-        hashTableClientB[i].push(0n) // For testing purposes
-
-    }
-}
-
-
-
-
-// console.log(' ------------------ Hash Table ------------------')
-// console.log('Hash Table (Client A):')
-// console.log(hashTableClientA)
-// console.log()
-// console.log('Hash Table (Client B):')
-// console.log(hashTableClientB)
-// console.log()
-
-// Creating the Polynomials in Point Value Representation
-vectorX.forEach(x => {
-
-    for (let i = 0; i < NUMBER_OF_BINS; i++) {
-        let answer = 1n;
-
-        hashTableClientA[i].forEach(root => {
-            answer = field.mul(answer, field.sub(x, root))
-        })
-
-        hashTablePointValueA[i].push(answer)
-    }
-
-    for (let i = 0; i < NUMBER_OF_BINS; i++) {
-        let answer = 1n;
-
-        hashTableClientB[i].forEach(root => {
-            answer = field.mul(answer, field.sub(x, root))
-        })
-        hashTablePointValueB[i].push(answer)
-    }
-})
-
-
-
-// console.log(' ------------------ Hash Table Point Values ------------------')
-// console.log('Hash Table Point Values (Client A):')
-// console.log(hashTablePointValueA)
-// console.log()
-// console.log('Hash Table Point Values (Client B):')
-// console.log(hashTablePointValueB)
-// console.log()
-
-// Creating Blinding Factors
-
-for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    const hashValueA = smallField.prng(BigInt(String(MASTER_KEY_CLIENTA) + String(i * 20)));
-    const hashValueB = smallField.prng(BigInt(String(MASTER_KEY_CLIENTB) + String(i * 20)));
-
-    for (let j = 0; j < 2 * MAXIMUM_LOAD + 1; j++) {
-        let blindingFactorA = smallField.prng(BigInt(String(hashValueA) + String(j * 20)))
-        let blindingFactorB = smallField.prng(BigInt(String(hashValueB) + String(j * 20)))
-
-        // To avoid a dividing by zero problem:
-        if (blindingFactorA === 0n) {
-            blindingFactorA = 1n
-        } else if (blindingFactorB === 0n) {
-            blindingFactorB = 1n
+    getCloudConfig = () => {
+        const NUMBER_OF_BINS = 26;
+        const MAXIMUM_LOAD = 100;
+        const LARGE_PRIME_NUMBER =  1044444166666668888888889999999999n
+        const SMALL_PRIME_NUMBER = 6435409832617n
+        const vectorX = []
+        for (let i = 1; i<= 2* MAXIMUM_LOAD + 1; i++){
+            vectorX.push(BigInt(i))
         }
-
-        blindingFactorsA[i].push(blindingFactorA);
-        blindingFactorsB[i].push(blindingFactorB);
+        return { NUMBER_OF_BINS,MAXIMUM_LOAD, LARGE_PRIME_NUMBER, SMALL_PRIME_NUMBER, vectorX }
     }
-}
+    
 
-// console.log(' ------------------ Blinding Factors ------------------')
-// console.log('Blinding Factors (Client A):')
-// console.log(blindingFactorsA)
-// console.log()
-// console.log('Blinding Factors (Client B):')
-// console.log(blindingFactorsB)
-// console.log()
-
-// Blinding the Point Value Pairs
-
-const blindingFactorsAMatrix = field.newMatrixFrom(blindingFactorsA)
-const blindingFactorsBMatrix = field.newMatrixFrom(blindingFactorsB)
-
-const hashTablePointValueAMatrix = field.newMatrixFrom(hashTablePointValueA)
-const hashTablePointValueBMatrix = field.newMatrixFrom(hashTablePointValueB)
-
-const blindedValuesAMatrix = field.divMatrixElements(hashTablePointValueAMatrix, blindingFactorsAMatrix)
-const blindedValuesBMatrix = field.divMatrixElements(hashTablePointValueBMatrix, blindingFactorsBMatrix)
-
-
-// console.log(' ------------------ Blinded Values (Matrices) ------------------')
-// console.log('Blinded Values (Client A):')
-// console.log(blindedValuesAMatrix)
-// console.log()
-// console.log('Blinded Values (Client B):')
-// console.log(blindedValuesBMatrix)
-// console.log()
-
-
-// console.time(`Starting from Computation Delegation Time`)
-
-// Initiation of Improved EO-PSI
-// Requester: Client B
-// Requestee: Client A
-
-// ================================== Client A Executes Computation Delegation ==================================
-const TEMPORARY_KEY_A = 321n;
-
-// Creating Random Polynomial
-for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    const hashValue = field.prng(BigInt(String(TEMPORARY_KEY_A) + String(i * 20)));
-
-    // Creating degree d random polynomial - note: degree d polynomial has d+1 coefficients
-    for (let j = 0; j < MAXIMUM_LOAD + 1; j++) {
-        const coefficient = field.prng(BigInt(String(hashValue) + String(j * 20)));
-        randomPolynomialA[i].push(coefficient)
-    }
-}
-
-// Converting to Point Value Representation
-const randomPolynomialA_PointValue = []
-randomPolynomialA.forEach((randomPolynomialInBin) => {
-    const polyArray = []
-    vectorX.forEach(x => {
-        polyArray.push(field.evalPolyAt(field.newVectorFrom(randomPolynomialInBin), x))
-    })
-    randomPolynomialA_PointValue.push(polyArray)
-})
-
-// console.log(' ------------------ Random Polynomial (Client A) ------------------')
-// console.log(randomPolynomialA_PointValue)
-// console.log()
-
-const randomPolynomialAMatrix = field.newMatrixFrom(randomPolynomialA_PointValue)
-const qValuesAMatrix = field.mulMatrixElements(randomPolynomialAMatrix, blindingFactorsAMatrix)
-
-// console.log(' ------------------ Q Matrix (Client A) ------------------')
-// console.log(qValuesAMatrix)
-// console.log()
-
-// ================================== Cloud Executes Results Computation ==================================
-
-const qPrimeMatrix = field.mulMatrixElements(qValuesAMatrix, blindedValuesAMatrix)
-
-
-const TEMPORARY_KEY_B = 987n;
-
-// Creating Random Polynomial B
-for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    const hashValue = field.prng(BigInt(String(TEMPORARY_KEY_B) + String(i * 20)));
-
-    // Creating degree d random polynomial - note: degree d polynomial has d+1 coefficients
-    for (let j = 0; j < MAXIMUM_LOAD + 1; j++) {
-        const coefficient = field.prng(BigInt(String(hashValue) + String(j * 20)));
-        randomPolynomialB[i].push(coefficient)
-    }
-}
-
-// Converting to Point Value Representation
-const randomPolynomialB_PointValue = []
-randomPolynomialB.forEach(randomPolynomialInBin => {
-    const polyArray = []
-
-    vectorX.forEach(x => {
-        polyArray.push(field.evalPolyAt(field.newVectorFrom(randomPolynomialInBin), x))
-    })
-    randomPolynomialB_PointValue.push(polyArray)
-})
-
-// console.log(' ------------------ Random Polynomial (Cloud) ------------------')
-// console.log(randomPolynomialB_PointValue)
-// console.log()
-
-const randomPolynomialBMatrix = field.newMatrixFrom(randomPolynomialB_PointValue)
-const qPrimePrimeMatrix = field.mulMatrixElements(randomPolynomialBMatrix, blindedValuesBMatrix)
-
-// console.log(` ------------------  q' and q" Matrices (Cloud) ------------------`)
-// console.log(`q' Matrix:`)
-// console.log(qPrimeMatrix)
-// console.log()
-// console.log(`q" Matrix:`)
-// console.log(qPrimePrimeMatrix)
-// console.log()
-
-// q' + q''(z) = wA T(A) + wB T(B) = g 
-// ================================== Client B Executes Results Retrieval ==================================
-
-const gMatrix = field.addMatrixElements(qPrimeMatrix, field.mulMatrixElements(qPrimePrimeMatrix, blindingFactorsBMatrix))
-const gValues = gMatrix.toValues()
-// console.log(` ------------------  g Values (Client B) ------------------`)
-// console.log(gValues)
-// console.log()
-
-const resultantPolynomial = []
-
-for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    const polynomialYVector = field.newVectorFrom(gValues[i])
-    const result = field.interpolate(field.newVectorFrom(vectorX), polynomialYVector)
-    resultantPolynomial.push(result)
-}
-
-
-// console.log(` ------------------  Results (Client B) ------------------`)
-// console.log('Resultant Polynomial:')
-// console.log()
-
-const answerArray = []
-
-for (let i = 0; i < NUMBER_OF_BINS; i++) {
-    const binAnswerArray = []
-
-    // Fast "Factorisation"
-    hashTableClientB[i].forEach(attribute => {
-        const yValue = field.evalPolyAt(resultantPolynomial[i], BigInt(attribute))
-
-        if (yValue === 0n) {
-            binAnswerArray.push(attribute)
+    getClientIP = (clientID) => {
+        if(!this.cloudDB.clientIDtoIPMap[clientID]){
+            throw new Error("This client cannot be found")
         }
-    })
+        return this.cloudDB.clientIDtoIPMap[clientID]
+    }
 
-    answerArray.push(binAnswerArray)
+    saveClientAttributes(clientID, attributes) {
+        this.cloudDB.saveClientAttributes(clientID, attributes)
+    }
+    saveClientInstance(clientID, clientInstance) {
+        this.cloudDB.saveClientInstance(clientID, clientInstance)
+    }
+
+    resultsComputation(request) {
+        const TEMP_KEY = 987n;
+        const {requesterID, qPrimeMatrix} = request
+        const requesterInstance = this.cloudDB.clientIDtoIPMap[requesterID]
+
+        const requesterBlindedValuesMatrix = this.cloudDB.blindedValuesMatrixMap[requesterID] // Retreive blinded values from database
+        
+        const { NUMBER_OF_BINS, MAXIMUM_LOAD, LARGE_PRIME_NUMBER, vectorX } = this.getCloudConfig() 
+        const [field] = GaloisUtil.generateGaloisFields([LARGE_PRIME_NUMBER])
+
+        const qPrimePrimeMatrix = ResultsComputationUtil.generateQPrimePrimeMatrix(requesterBlindedValuesMatrix,field, NUMBER_OF_BINS, MAXIMUM_LOAD, TEMP_KEY, vectorX)
+        
+        requesterInstance.resultsRetrieval({qPrimeMatrix, qPrimePrimeMatrix})
+    }
 }
 
-// console.log(` ------------------  Answer Array (Real and Junk Values) ------------------`)
-// console.log(answerArray)
-// console.log()
-
-// Removing Fake Attributes from Real Attributes
-
-realAnswerArray = []
-
-
-console.log(answerArray)
-answerArray.forEach(bin => {
-    if (bin.length !== 0) {
-        bin.forEach(answer => {
-            const {realValue, value } = checkHashValue(answer,smallField,SMALL_PRIME_NUMBER)
-            if(realValue){
-                realAnswerArray.push(value)
-            }
-        })
+class CloudDB {
+    clientIDtoIPMap; // // KV store of [clientID] : client instance
+    blindedValuesMatrixMap; // Key Value store for blindedValuesMatrix [clientID: blindedValuesMatrix]
+    constructor(){
+        this.blindedValuesMatrixMap = {}
+        this.clientIDtoIPMap = {}
     }
-})
+    
+    saveClientAttributes(clientID, blindedValuesMatrix){
+        this.blindedValuesMatrixMap[clientID] = blindedValuesMatrix
+    }
+
+    saveClientInstance(clientID, clientInstance){
+        this.clientIDtoIPMap[clientID] = clientInstance
+    }
+}
 
 
-// console.log(` ------------------  Answer Array (Only Real Values) ------------------`)
-console.log(realAnswerArray)
-// console.log()
 
-// console.log('Client A Attributes: ' + clientAAttributes)
-// console.log('Client B Attributes: ' + clientBAttributes)
-// console.log('Vector X: ' + vectorX)
+// Client 
+class ClientController {
+    
+    clientServiceInstance;
 
-console.timeEnd(`Full Protocol Time`)
-// console.timeEnd(`Starting from Computation Delegation Time`)
+    constructor(clientServiceInstance) {
+        this.clientServiceInstance = clientServiceInstance
+    }
+    initClient(request){
+        const {masterKey, attributes, clientID} = request
+        this.clientServiceInstance.initClient({masterKey, attributes, clientID, clientIP: this })
+    }
+
+    initPSI(request){
+        const {requesteeID} = request
+        this.clientServiceInstance.initPSI({requesteeID})
+    }
+
+    computationDelegation(request){
+        const {requesterID} = request
+        this.clientServiceInstance.computationDelegation({requesterID})
+    }
+
+    resultsRetrieval(request){
+        const { qPrimeMatrix, qPrimePrimeMatrix } = request;
+        this.clientServiceInstance.resultsRetrieval({qPrimeMatrix, qPrimePrimeMatrix})
+    }
+
+}
+
+class ClientService {
+    clientDB; // ClientDB instance
+    cloudInstance; // Remote to communicate with the cloud
+
+    constructor(clientDB, cloudInstance) {
+        this.clientDB = clientDB
+        this.cloudInstance = cloudInstance
+    }
+
+    initClient( {masterKey, attributes, clientID, clientIP }) {
+        const { NUMBER_OF_BINS, MAXIMUM_LOAD, SMALL_PRIME_NUMBER, LARGE_PRIME_NUMBER, vectorX }= this.cloudInstance.getCloudConfig()
+   
+        const hashedAttributes = HashUtil.attributesToHash(attributes)
+
+        // Save masterkey and attributes to DB
+        this.clientDB.clientID = clientID
+        this.clientDB.masterKey = masterKey
+        this.clientDB.attributes = attributes
+
+        const {blindingFactors, blindedValuesMatrix} = InitClientUtil.getBlindingFactorsAndBlindedValues(hashedAttributes, NUMBER_OF_BINS, MAXIMUM_LOAD, SMALL_PRIME_NUMBER, LARGE_PRIME_NUMBER, vectorX, masterKey)
+
+        this.clientDB.blindingFactors = blindingFactors // Save blinding factors so that we do not have to recompute during results retrieval
+        this.clientDB.blindedValuesMatrix = blindedValuesMatrix // Save the blinded values so that we dont have to recompuate during results computation
+        
+        cloudInstance.saveClientAttributes(clientID, blindedValuesMatrix) // Save blinded values to cloud 
+        cloudInstance.saveClientInstance(clientID, clientIP) // To simulate the ID to IP retrieval
+    }
+
+    // Requestee
+    computationDelegation(request){
+        const TEMP_KEY = 321n
+        const masterKey = this.clientDB.masterKey
+        const blindedValuesMatrix = this.clientDB.blindedValuesMatrix
+        const {requesterID} = request
+
+        const { SMALL_PRIME_NUMBER, LARGE_PRIME_NUMBER, NUMBER_OF_BINS, MAXIMUM_LOAD, vectorX }= this.cloudInstance.getCloudConfig()
+
+        const qPrimeMatrix = ComputationDelegationUtil.generateQPrimeMatrix(SMALL_PRIME_NUMBER, LARGE_PRIME_NUMBER, NUMBER_OF_BINS, MAXIMUM_LOAD, TEMP_KEY, vectorX, masterKey, blindedValuesMatrix)
+        
+        cloudInstance.resultsComputation({requesterID, qPrimeMatrix})
+    }
+
+    // Requester
+    initPSI(request){
+        const requesterID = this.clientDB.clientID;
+        const {requesteeID} = request
+        const requesteeInstance = cloudInstance.getClientIP(requesteeID) //TODO:This should be changed to a controller instance instead
+        requesteeInstance.computationDelegation({requesterID})
+    }
+
+    resultsRetrieval(request){
+        const { qPrimeMatrix, qPrimePrimeMatrix } = request;
+        const { NUMBER_OF_BINS,LARGE_PRIME_NUMBER,SMALL_PRIME_NUMBER, MAXIMUM_LOAD, vectorX }= this.cloudInstance.getCloudConfig()
+        const attributes = this.clientDB.attributes
+        const hashedAttributes = HashUtil.attributesToHash(attributes)
+
+        const blindingFactors = this.clientDB.blindingFactors; // Stored in initClient
+
+        const realAnswerArray = ResultsRetrievalUtil.resultsRetrieval(SMALL_PRIME_NUMBER, LARGE_PRIME_NUMBER,MAXIMUM_LOAD, NUMBER_OF_BINS,vectorX, blindingFactors, hashedAttributes, qPrimeMatrix, qPrimePrimeMatrix)
+
+        const finalResult = HashUtil.hashToNameAndNumber(attributes, realAnswerArray)
+        console.log(finalResult)
+    } 
+
+}
+
+
+// Data access layer
+class ClientMemDA {
+    constructor(){
+        this.clientDB = new ClientDB()
+    }
+
+    saveClientID(clientID){
+        this.clientDB.clientID = clientID
+    }
+    saveMasterKey(masterKey){
+        this.clientDB.masterKey = masterKey
+    }
+    saveAttributes(attributes){
+        this.clientDB.attributes = attributes
+    }
+    saveBlindedValuesMatrix(blindedValuesMatrix){
+        this.clientDB.blindedValuesMatrix = blindedValuesMatrix
+    }
+    saveBlindingFactors(blindingFactors){
+        this.clientDB.blindedFactors = blindingFactors
+    }
+
+    getClientID() {
+        return this.clientDB.clientID
+    }
+    getMasterKey(){
+        return this.clientDB.masterKey
+    }
+    getAttributes(){
+        return this.clientDB.attributes
+    }
+    getBlindedValuesMatrix(){
+        return this.clientDB.blindedValuesMatrix
+    }
+    getBlindingFactors(){
+        return this.clientDB.blindingFactors
+    }
+}
+
+// Simulates the postgres DB --> All these values should be stored in strings
+class ClientDB {
+    clientID;
+    masterKey;
+    attributes;
+    blindedValuesMatrix;
+    blindingFactors;    
+}
+
+
+
+/**
+ * Initializations
+ */
+const cloudDBInstance = new CloudDB()
+const cloudInstance = new Cloud(cloudDBInstance);
+
+
+// Client A
+const clientDBInstanceA = new ClientDB();
+const clientA = new ClientService(clientDBInstanceA, cloudInstance); 
+const clientAController = new ClientController(clientA)
+
+
+const initClientARequest = {
+    clientID: 'A',
+    masterKey: 123451231n,
+    attributes: TestDataUtil.generateRandomNameAndNumbers(100)
+}
+
+clientAController.initClient(initClientARequest)
+
+
+// Client B
+const clientDBInstanceB = new ClientDB();
+const clientB = new ClientService(clientDBInstanceB, cloudInstance);
+const clientBController = new ClientController(clientB)
+
+const initClientBRequest = {
+    clientID: 'B',
+    masterKey:1234n,
+    attributes: TestDataUtil.generateRandomNameAndNumbers(100)
+} 
+
+clientBController.initClient(initClientBRequest)
+clientB.initPSI({requesteeID: 'A'}) // Client B executes initPSI
+
+
+/**
+ * TODO:
+ * - Make all functions a factor of saved attributes
+ * - Make the services send strings instead of matrices
+ * - Make Init PSI wait and the retrieve the results
+ * - Service layer should remain the same when ported over, make sure that all saved and set attributes are stored as strings
+ * - Split to different files
+ */

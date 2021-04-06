@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@guildofweavers/galois": "^0.4.22",
+    "crypto-js": "^4.0.0",
     "express": "^4.17.1"
   }
 }
